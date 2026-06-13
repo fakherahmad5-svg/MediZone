@@ -126,6 +126,12 @@ return [
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],
+        'audit' => [
+            'driver' => 'daily',
+            'path'   => storage_path('logs/audit.log'),
+            'level'  => 'info',
+            'days'   => 90,  // احتفظ بـ audit logs 90 يوم
+        ],
 
     ],
 

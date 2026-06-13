@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+    phpunit.xml
+
+    إعداد بيئة الاختبار للمشروع.
+    
+    المبدأ المعتمد:
+      - كل Test يعمل على قاعدة بيانات منفصلة في الذاكرة (sqlite :memory:)
+      - كل Test مستقل — لا يؤثر على غيره
+      - نستخدم RefreshDatabase trait لتنظيف البيانات بين كل Test
+-->
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
          bootstrap="vendor/autoload.php"
@@ -6,30 +16,59 @@
 >
     <testsuites>
         <testsuite name="Unit">
-            <directory>tests/Unit</directory>
+            <directory suffix="Test.php">./tests/Unit</directory>
         </testsuite>
         <testsuite name="Feature">
-            <directory>tests/Feature</directory>
+            <directory suffix="Test.php">./tests/Feature</directory>
         </testsuite>
     </testsuites>
+
     <source>
         <include>
-            <directory>app</directory>
+            <directory suffix=".php">./app</directory>
         </include>
     </source>
+
     <php>
+        <!--
+            متغيرات بيئة الاختبار
+            تُستخدَم فقط أثناء تشغيل الاختبارات
+            لا تؤثر على .env الأصلي
+        -->
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
-        <env name="BCRYPT_ROUNDS" value="4"/>
-        <env name="BROADCAST_CONNECTION" value="null"/>
-        <env name="CACHE_STORE" value="array"/>
+
+        <!--
+            SQLite in-memory: قاعدة بيانات مؤقتة في الذاكرة
+            سريعة جداً للاختبارات ولا تحتاج MySQL server
+            تُنشأ من جديد لكل Test Suite
+        -->
         <env name="DB_CONNECTION" value="sqlite"/>
         <env name="DB_DATABASE" value=":memory:"/>
-        <env name="MAIL_MAILER" value="array"/>
+
+        <!--
+            Sync driver: بدل Queue — يُنفِّذ Jobs فوراً
+            يسهّل اختبار الـ Jobs بدون Queue worker
+        -->
         <env name="QUEUE_CONNECTION" value="sync"/>
+
+        <!-- Cache في الذاكرة للاختبارات -->
+        <env name="CACHE_STORE" value="array"/>
+
+        <!-- Session في الذاكرة للاختبارات -->
         <env name="SESSION_DRIVER" value="array"/>
-        <env name="PULSE_ENABLED" value="false"/>
-        <env name="TELESCOPE_ENABLED" value="false"/>
-        <env name="NIGHTWATCH_ENABLED" value="false"/>
+
+        <!-- Mail Fake — لا يرسل emails حقيقية أثناء الاختبارات -->
+        <env name="MAIL_MAILER" value="array"/>
+
+        <!-- Broadcast Log driver — لا يُرسل لـ Pusher أثناء الاختبارات -->
+        <env name="BROADCAST_CONNECTION" value="log"/>
+
+        <!-- Filesystem Local للاختبارات -->
+        <env name="FILESYSTEM_DISK" value="local"/>
+
+        <!-- Sanctum Stateful Domains للاختبارات -->
+        <env name="SANCTUM_STATEFUL_DOMAINS" value="localhost"/>
     </php>
+
 </phpunit>
