@@ -12,7 +12,6 @@ class NotFoundException extends AppException
     }
 }
 
-
 class AuthorizationException extends AppException
 {
     public function __construct(
@@ -22,7 +21,6 @@ class AuthorizationException extends AppException
         parent::__construct($message, 403, $errors);
     }
 }
-
 
 class BusinessException extends AppException
 {
@@ -34,7 +32,6 @@ class BusinessException extends AppException
     }
 }
 
-
 class ConflictException extends AppException
 {
     public function __construct(
@@ -45,7 +42,6 @@ class ConflictException extends AppException
     }
 }
 
-
 class DomainValidationException extends AppException
 {
     public function __construct(
@@ -55,7 +51,6 @@ class DomainValidationException extends AppException
         parent::__construct($message, 422, $errors);
     }
 }
-
 class ServiceUnavailableException extends AppException
 {
     public function __construct(

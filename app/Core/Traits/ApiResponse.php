@@ -9,7 +9,6 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 trait ApiResponse
 {
-
     protected function successResponse(
         mixed $data = null,
         string $message = 'Operation successful',
@@ -35,7 +34,6 @@ trait ApiResponse
         return response()->json($response, $statusCode);
     }
 
-
     protected function createdResponse(
         mixed $data = null,
         string $message = 'Resource created successfully'
@@ -43,12 +41,10 @@ trait ApiResponse
         return $this->successResponse($data, $message, 201);
     }
 
-
     protected function noContentResponse(): JsonResponse
     {
         return response()->json(null, 204);
     }
-
 
     protected function paginatedResponse(
         LengthAwarePaginator $paginator,

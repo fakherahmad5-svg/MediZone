@@ -7,20 +7,17 @@ use Tests\TestCase;
 /**
  * InfrastructureTest
  *
- * أول اختبار في المشروع — يتحقق أن البنية التحتية تعمل بشكل صحيح.
+ * يتحقق أن البنية التحتية (Phase 0) تعمل بشكل صحيح.
  *
- * هذا الاختبار لا يختبر business logic بل يختبر:
- *   1. الـ API يستجيب
- *   2. شكل الـ responses صحيح
- *   3. الـ Exception Handler يعمل
- *
- * تشغيل الاختبار:
- *   php artisan test tests/Feature/InfrastructureTest.php
+ * التغييرات عن النسخة الأولى:
+ *   - test_protected_routes: يستخدم الآن /api/v1/ping بدل /api/v1/records
+ *     لأن /records غير موجود في الـ routes بعد (سيُضاف في المرحلة 4)
+ *     و /ping موجود داخل auth:sanctum group ويُرجع 401 بدون token بالتأكيد
  */
 class InfrastructureTest extends TestCase
 {
     /**
-     * اختبار أن الـ API Health Check يعمل
+     * ✅ اختبار 1: Health Check الأساسي يعمل
      */
     public function test_api_health_check_returns_200(): void
     {
@@ -30,25 +27,23 @@ class InfrastructureTest extends TestCase
     }
 
     /**
-     * اختبار أن endpoint غير موجود يُرجع 404 بـ JSON format
-     * وليس HTML page
+     * ✅ اختبار 2: Route غير موجود يُرجع JSON وليس HTML
      */
     public function test_unknown_endpoint_returns_json_404(): void
     {
         $response = $this->getJson('/api/v1/this-does-not-exist');
 
         $response->assertStatus(404)
-            ->assertJson([
-                'success' => false,
-            ])
-            ->assertJsonStructure([
-                'success',
-                'message',
-            ]);
+            ->assertJson(['success' => false])
+            ->assertJsonStructure(['success', 'message']);
     }
 
     /**
-     * اختبار أن Auth module جاهز (placeholder route)
+     * ✅ اختبار 3: Auth module جاهز (health endpoint)
+     *
+     * هذا الـ route موجود في app/Modules/Auth/routes.php
+     * إذا فشل هذا الاختبار، معناه أن require base_path(...) لا يعمل
+     * أو الملف غير موجود في المسار الصحيح
      */
     public function test_auth_module_health_endpoint_works(): void
     {
@@ -62,30 +57,29 @@ class InfrastructureTest extends TestCase
     }
 
     /**
-     * اختبار أن الـ API يُرجع JSON حتى بدون Accept header
-     * (ForceJsonResponse Middleware يعمل)
+     * ✅ اختبار 4: ForceJsonResponse Middleware يعمل
+     * حتى بدون إرسال Accept: application/json header
      */
     public function test_api_forces_json_response_without_accept_header(): void
     {
+        // نستخدم get() وليس getJson() — بدون Accept header
         $response = $this->get('/api/v1/this-does-not-exist');
 
-        // حتى بدون getJson() (بدون Accept: application/json)
-        // يجب أن يُرجع JSON وليس HTML
         $response->assertHeader('Content-Type', 'application/json');
     }
 
     /**
-     * اختبار أن محاولة الوصول لـ protected route بدون token تُرجع 401
-     * وليس redirect لـ /login
+     * ✅ اختبار 5: Protected route بدون token يُرجع 401 وليس redirect
+     *
+     * نستخدم /api/v1/ping لأنه:
+     *   - موجود في routes/api.php داخل auth:sanctum group
+     *   - بدون token → يُرجع 401 مباشرة (لا redirect بفضل ForceJsonResponse)
      */
     public function test_protected_routes_return_401_not_redirect(): void
     {
-        // نحاول الوصول لأي route محمي بدون token
-        $response = $this->getJson('/api/v1/records');
+        $response = $this->getJson('/api/v1/ping');
 
         $response->assertStatus(401)
-            ->assertJson([
-                'success' => false,
-            ]);
+            ->assertJson(['success' => false]);
     }
 }

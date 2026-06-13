@@ -45,8 +45,6 @@ abstract class BaseRepository implements RepositoryInterface
     public function update(Model $model, array $data): Model
     {
         $model->update($data);
-
-
         return $model->fresh();
     }
 
@@ -64,7 +62,6 @@ abstract class BaseRepository implements RepositoryInterface
     {
         return $this->model->with($relations)->where($conditions)->first();
     }
-
 
     protected function buildQuery(): \Illuminate\Database\Eloquent\Builder
     {

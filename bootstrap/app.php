@@ -1,17 +1,5 @@
 <?php
 
-/**
- * bootstrap/app.php
- *
- * في Laravel 11+ (والـ 12)، هذا الملف أصبح مركز إعداد التطبيق.
- * هنا نُعرِّف:
- *   - مسارات الـ Routes
- *   - الـ Middleware
- *   - معالجة الـ Exceptions
- *
- * لا يوجد Kernel.php في Laravel 12 —
- * كل ما كان فيه الآن موجود هنا.
- */
 
 use Illuminate\Auth\Access\AuthorizationException as LaravelAuthorizationException;
 use Illuminate\Auth\AuthenticationException;

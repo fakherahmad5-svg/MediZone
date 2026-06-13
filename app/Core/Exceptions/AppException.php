@@ -10,7 +10,6 @@ abstract class AppException extends Exception
 {
     protected int $statusCode;
     protected array $errors;
-
     public function __construct(
         string $message = '',
         int $statusCode = 400,
@@ -21,17 +20,14 @@ abstract class AppException extends Exception
         $this->statusCode = $statusCode;
         $this->errors     = $errors;
     }
-
     public function getStatusCode(): int
     {
         return $this->statusCode;
     }
-
     public function getErrors(): array
     {
         return $this->errors;
     }
-
     public function render(): JsonResponse
     {
         $response = [

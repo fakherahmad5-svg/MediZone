@@ -3,6 +3,8 @@
 namespace App\Core\Traits;
 
 
+use Illuminate\Support\Facades\Log;
+
 trait HasAuditLog
 {
 
@@ -14,7 +16,7 @@ trait HasAuditLog
         array $newValues = []
     ): void {
 
-        \Log::channel('audit')->info('[AUDIT]', [
+        Log::channel('audit')->info('[AUDIT]', [
             'action'      => $action,
             'entity_type' => $entityType,
             'entity_id'   => $entityId,
