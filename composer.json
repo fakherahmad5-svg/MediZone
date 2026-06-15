@@ -27,12 +27,13 @@
         "files": [
             "app/Core/Helpers/helpers.php"
         ]
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Tests\\": "tests/"
-        }
-    },
+    },"autoload-dev": {
+    "psr-4": {
+        "Tests\\": "tests/",
+        "Database\\Factories\\": "database/factories/",
+        "Database\\Seeders\\": "database/seeders/"
+    }
+},
     "scripts": {
         "setup": [
             "composer install",

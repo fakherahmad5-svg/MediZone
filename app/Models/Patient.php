@@ -1,0 +1,56 @@
+<?php
+namespace App\Models;
+
+use App\Modules\Auth\Models\User;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class Patient extends Model
+{
+    use SoftDeletes;
+
+    protected $fillable = ['user_id', 'blood_type'];
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function patientRecord(): HasOne
+    {
+        return $this->hasOne(PatientRecord::class);
+    }
+
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class);
+    }
+
+    public function doctorAccesses(): HasMany
+    {
+        return $this->hasMany(PatientDoctorAccess::class);
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(DoctorReview::class);
+    }
+
+    public function favorites(): HasMany
+    {
+        return $this->hasMany(DoctorFavorite::class);
+    }
+
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    public function reports(): HasMany
+    {
+        return $this->hasMany(DoctorReport::class);
+    }
+}
