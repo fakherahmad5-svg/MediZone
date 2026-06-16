@@ -21,7 +21,7 @@ class UserSeeder extends Seeder
     {
         $mainClinic = Clinic::query()->where('email', 'riyadh@vmc.sa')->firstOrFail();
         $cardiology = Department::query()
-            ->where('clinic_id', $mainClinic->id)
+
             ->where('name', 'Cardiology')
             ->firstOrFail();
         $pediatrics = Department::query()

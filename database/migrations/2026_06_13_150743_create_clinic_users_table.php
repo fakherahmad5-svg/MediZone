@@ -10,12 +10,12 @@ return new class extends Migration
     {
         Schema::create('clinic_users', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('clinic_id')->constrained('clinics')->cascadeOnDelete();
+            $table->foreignId('clinic_id')->nullable()->constrained('clinics')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('role_id')->constrained('roles')->cascadeOnDelete();
             $table->timestamps();
-
             $table->unique(['clinic_id', 'user_id']);
+            $table->index(['user_id', 'role_id']);
         });
     }
 

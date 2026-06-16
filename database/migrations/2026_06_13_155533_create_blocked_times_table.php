@@ -18,6 +18,7 @@ return new class extends Migration
             $table->time('end_time');
             $table->string('reason')->nullable();
             $table->timestamps();
+            $table->index(['doctor_id', 'block_date']);
         });
     }
 

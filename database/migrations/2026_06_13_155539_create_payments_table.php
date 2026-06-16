@@ -1,5 +1,7 @@
 <?php
 
+use App\Core\Enums\PaymentMethod;
+use App\Core\Enums\PaymentStatus;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -13,8 +15,8 @@ return new class extends Migration
             $table->foreignId('clinic_id')->constrained('clinics')->cascadeOnDelete();
             $table->foreignId('invoice_id')->constrained('invoices')->cascadeOnDelete();
             $table->decimal('amount', 10, 2);
-            $table->enum('method', ['cash', 'card', 'online']);
-            $table->enum('status', ['pending', 'completed', 'failed', 'refunded'])->default('pending');
+            $table->enum('method', PaymentMethod::values());
+            $table->enum('status', PaymentStatus::values())->default(PaymentStatus::Pending->value);
             $table->timestamp('paid_at')->nullable();
             $table->timestamps();
 

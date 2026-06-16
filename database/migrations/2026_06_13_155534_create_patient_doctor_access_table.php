@@ -1,5 +1,7 @@
 <?php
 
+use App\Core\Enums\AccessStatus;
+use App\Core\Enums\AccessType;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -12,9 +14,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('patient_id')->constrained('patients')->cascadeOnDelete();
             $table->foreignId('doctor_id')->constrained('doctors')->cascadeOnDelete();
-            $table->foreignId('granted_by')->constrained('users')->cascadeOnDelete();
-            $table->enum('access_type', ['read_only', 'full'])->default('read_only');
-            $table->enum('status', ['active', 'revoked', 'expired'])->default('active');
+
+            $table->enum('access_type', AccessType::values());
+            $table->enum('status', AccessStatus::values())->default(AccessStatus::Active->value);
+
             $table->timestamp('expires_at')->nullable();
             $table->timestamp('granted_at')->nullable();
             $table->timestamp('revoked_at')->nullable();

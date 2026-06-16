@@ -10,11 +10,12 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             RoleSeeder::class,
-            ClinicSeeder::class,
             DepartmentSeeder::class,
+            ClinicSeeder::class,
             NotificationTemplateSeeder::class,
             DrugSeeder::class,
-            UserSeeder::class,
+            //UserSeeder::class,
+            AdminUserSeeder::class,
         ]);
     }
 }

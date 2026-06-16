@@ -1,144 +1,171 @@
 <?php
+
 namespace Database\Seeders;
 
-use App\Models\NotificationTemplate;
+use App\Core\Enums\NotificationChannel;
+use App\Core\Enums\NotificationType;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+
 
 class NotificationTemplateSeeder extends Seeder
 {
     public function run(): void
     {
+        $inApp     = [NotificationChannel::InApp->value];
+        $standard  = [NotificationChannel::InApp->value, NotificationChannel::Push->value];
+        $important = [NotificationChannel::InApp->value, NotificationChannel::Push->value, NotificationChannel::Email->value];
+
         $templates = [
-            [
-                'type' => 'appointment_confirmed',
+            NotificationType::AppointmentConfirmed->value => [
                 'title_en' => 'Appointment Confirmed',
                 'title_ar' => 'تم تأكيد الموعد',
-                'body_en' => 'Your appointment with Dr. {{doctor_name}} on {{date}} has been confirmed.',
-                'body_ar' => 'تم تأكيد موعدك مع د. {{doctor_name}} بتاريخ {{date}}.',
+                'body_en'  => 'Your appointment with {{doctor_name}} on {{appointment_date}} has been confirmed.',
+                'body_ar'  => 'تم تأكيد موعدك مع {{doctor_name}} في {{appointment_date}}.',
+                'channels' => $important,
             ],
-            [
-                'type' => 'appointment_cancelled',
+            NotificationType::AppointmentCancelled->value => [
                 'title_en' => 'Appointment Cancelled',
                 'title_ar' => 'تم إلغاء الموعد',
-                'body_en' => 'Your appointment on {{date}} has been cancelled.',
-                'body_ar' => 'تم إلغاء موعدك بتاريخ {{date}}.',
+                'body_en'  => 'Your appointment with {{doctor_name}} on {{appointment_date}} has been cancelled.',
+                'body_ar'  => 'تم إلغاء موعدك مع {{doctor_name}} في {{appointment_date}}.',
+                'channels' => $important,
             ],
-            [
-                'type' => 'appointment_reminder',
+            NotificationType::AppointmentReminder->value => [
                 'title_en' => 'Appointment Reminder',
-                'title_ar' => 'تذكير بالموعد',
-                'body_en' => 'Reminder: you have an appointment tomorrow at {{time}}.',
-                'body_ar' => 'تذكير: لديك موعد غداً الساعة {{time}}.',
+                'title_ar' => 'تذكير بموعدك',
+                'body_en'  => 'Reminder: you have an appointment with {{doctor_name}} at {{appointment_time}}.',
+                'body_ar'  => 'تذكير: لديك موعد مع {{doctor_name}} في {{appointment_time}}.',
+                'channels' => $standard,
             ],
-            [
-                'type' => 'appointment_rescheduled',
+            NotificationType::AppointmentRescheduled->value => [
                 'title_en' => 'Appointment Rescheduled',
-                'title_ar' => 'تم إعادة جدولة الموعد',
-                'body_en' => 'Your appointment has been rescheduled to {{date}} at {{time}}.',
-                'body_ar' => 'تم إعادة جدولة موعدك إلى {{date}} الساعة {{time}}.',
+                'title_ar' => 'تمت إعادة جدولة الموعد',
+                'body_en'  => 'Your appointment with {{doctor_name}} has been rescheduled to {{new_date}}.',
+                'body_ar'  => 'تمت إعادة جدولة موعدك مع {{doctor_name}} إلى {{new_date}}.',
+                'channels' => $important,
             ],
-            [
-                'type' => 'appointment_completed',
+            NotificationType::AppointmentCompleted->value => [
                 'title_en' => 'Appointment Completed',
                 'title_ar' => 'اكتمل الموعد',
-                'body_en' => 'Your appointment with Dr. {{doctor_name}} has been completed.',
-                'body_ar' => 'اكتمل موعدك مع د. {{doctor_name}}.',
+                'body_en'  => 'Your appointment with {{doctor_name}} has been marked as completed.',
+                'body_ar'  => 'تم تسجيل موعدك مع {{doctor_name}} كمكتمل.',
+                'channels' => $inApp,
             ],
-            [
-                'type' => 'consultation_started',
+            NotificationType::ConsultationStarted->value => [
                 'title_en' => 'Consultation Started',
                 'title_ar' => 'بدأت الاستشارة',
-                'body_en' => 'Dr. {{doctor_name}} has started your consultation.',
-                'body_ar' => 'بدأ د. {{doctor_name}} استشارتك.',
+                'body_en'  => '{{doctor_name}} has started the consultation. Tap to join the chat.',
+                'body_ar'  => 'بدأ {{doctor_name}} الاستشارة. اضغط للانضمام للمحادثة.',
+                'channels' => $standard,
             ],
-            [
-                'type' => 'consultation_message_received',
+            NotificationType::ConsultationMessageReceived->value => [
                 'title_en' => 'New Message',
                 'title_ar' => 'رسالة جديدة',
-                'body_en' => 'You have a new message in your consultation.',
-                'body_ar' => 'لديك رسالة جديدة في الاستشارة.',
+                'body_en'  => 'You have a new message from {{sender_name}}.',
+                'body_ar'  => 'لديك رسالة جديدة من {{sender_name}}.',
+                'channels' => $standard,
             ],
-            [
-                'type' => 'consultation_ended',
+            NotificationType::ConsultationEnded->value => [
                 'title_en' => 'Consultation Ended',
                 'title_ar' => 'انتهت الاستشارة',
-                'body_en' => 'Your consultation with Dr. {{doctor_name}} has ended.',
-                'body_ar' => 'انتهت استشارتك مع د. {{doctor_name}}.',
+                'body_en'  => 'Your consultation with {{doctor_name}} has ended.',
+                'body_ar'  => 'انتهت استشارتك مع {{doctor_name}}.',
+                'channels' => $inApp,
             ],
-            [
-                'type' => 'payment_confirmed',
+            NotificationType::PaymentConfirmed->value => [
                 'title_en' => 'Payment Confirmed',
                 'title_ar' => 'تم تأكيد الدفع',
-                'body_en' => 'Your payment of {{amount}} SAR has been confirmed.',
-                'body_ar' => 'تم تأكيد دفعتك بمبلغ {{amount}} ريال.',
+                'body_en'  => 'Your payment of {{amount}} has been received successfully.',
+                'body_ar'  => 'تم استلام دفعتك بقيمة {{amount}} بنجاح.',
+                'channels' => $important,
             ],
-            [
-                'type' => 'payment_failed',
+            NotificationType::PaymentFailed->value => [
                 'title_en' => 'Payment Failed',
-                'title_ar' => 'فشل الدفع',
-                'body_en' => 'Your payment could not be processed. Please try again.',
-                'body_ar' => 'تعذر معالجة الدفع. يرجى المحاولة مرة أخرى.',
+                'title_ar' => 'فشلت عملية الدفع',
+                'body_en'  => 'Your payment of {{amount}} could not be processed. Please try again.',
+                'body_ar'  => 'تعذَّرت عملية الدفع بقيمة {{amount}}. يرجى المحاولة مجدداً.',
+                'channels' => $important,
             ],
-            [
-                'type' => 'invoice_issued',
-                'title_en' => 'Invoice Issued',
-                'title_ar' => 'تم إصدار فاتورة',
-                'body_en' => 'A new invoice of {{amount}} SAR has been issued.',
-                'body_ar' => 'تم إصدار فاتورة جديدة بمبلغ {{amount}} ريال.',
+            NotificationType::InvoiceIssued->value => [
+                'title_en' => 'New Invoice',
+                'title_ar' => 'فاتورة جديدة',
+                'body_en'  => 'A new invoice of {{amount}} has been issued for your appointment.',
+                'body_ar'  => 'تم إصدار فاتورة جديدة بقيمة {{amount}} لموعدك.',
+                'channels' => $standard,
             ],
-            [
-                'type' => 'access_granted',
+            NotificationType::AccessGranted->value => [
                 'title_en' => 'Access Granted',
                 'title_ar' => 'تم منح صلاحية الوصول',
-                'body_en' => 'Dr. {{doctor_name}} has been granted access to your medical record.',
-                'body_ar' => 'تم منح د. {{doctor_name}} صلاحية الوصول لسجلك الطبي.',
+                'body_en'  => '{{patient_name}} has granted you access to their medical record.',
+                'body_ar'  => 'منحك {{patient_name}} صلاحية الوصول إلى سجله الطبي.',
+                'channels' => $standard,
             ],
-            [
-                'type' => 'access_revoked',
+            NotificationType::AccessRevoked->value => [
                 'title_en' => 'Access Revoked',
                 'title_ar' => 'تم سحب صلاحية الوصول',
-                'body_en' => 'Dr. {{doctor_name}} access to your medical record has been revoked.',
-                'body_ar' => 'تم سحب صلاحية د. {{doctor_name}} للوصول لسجلك الطبي.',
+                'body_en'  => '{{patient_name}} has revoked your access to their medical record.',
+                'body_ar'  => 'سحب {{patient_name}} صلاحية وصولك إلى سجله الطبي.',
+                'channels' => $standard,
             ],
-            [
-                'type' => 'doctor_verified',
-                'title_en' => 'Doctor Verified',
-                'title_ar' => 'تم توثيق الطبيب',
-                'body_en' => 'Your doctor account has been verified. You can now accept appointments.',
-                'body_ar' => 'تم توثيق حسابك كطبيب. يمكنك الآن قبول المواعيد.',
+            NotificationType::DoctorVerified->value => [
+                'title_en' => 'Account Verified',
+                'title_ar' => 'تم توثيق حسابك',
+                'body_en'  => 'Congratulations! Your doctor account has been verified. You can now receive appointments.',
+                'body_ar'  => 'تهانينا! تم توثيق حسابك كطبيب. يمكنك الآن استقبال المواعيد.',
+                'channels' => $important,
             ],
-            [
-                'type' => 'doctor_rejected',
-                'title_en' => 'Doctor Verification Rejected',
-                'title_ar' => 'تم رفض توثيق الطبيب',
-                'body_en' => 'Your doctor verification request was rejected. Contact support for details.',
-                'body_ar' => 'تم رفض طلب توثيق حسابك كطبيب. تواصل مع الدعم للتفاصيل.',
+            NotificationType::DoctorRejected->value => [
+                'title_en' => 'Verification Rejected',
+                'title_ar' => 'تم رفض طلب التوثيق',
+                'body_en'  => 'Your doctor verification request was rejected. Reason: {{reason}}.',
+                'body_ar'  => 'تم رفض طلب توثيق حسابك. السبب: {{reason}}.',
+                'channels' => $important,
             ],
-            [
-                'type' => 'report_received',
-                'title_en' => 'Report Received',
-                'title_ar' => 'تم استلام بلاغ',
-                'body_en' => 'Your report has been received and is under review.',
-                'body_ar' => 'تم استلام بلاغك وهو قيد المراجعة.',
+            NotificationType::ReportReceived->value => [
+                'title_en' => 'New Report Received',
+                'title_ar' => 'تم استلام شكوى جديدة',
+                'body_en'  => 'A new report has been submitted regarding {{doctor_name}}.',
+                'body_ar'  => 'تم تقديم شكوى جديدة بخصوص {{doctor_name}}.',
+                'channels' => $inApp,
             ],
-            [
-                'type' => 'system_alert',
+            NotificationType::SystemAlert->value => [
                 'title_en' => 'System Alert',
-                'title_ar' => 'تنبيه النظام',
-                'body_en' => 'Important system notification: {{message}}',
-                'body_ar' => 'تنبيه مهم من النظام: {{message}}',
+                'title_ar' => 'تنبيه من النظام',
+                'body_en'  => '{{message}}',
+                'body_ar'  => '{{message}}',
+                'channels' => $important,
+            ],
+            NotificationType::RefundRequested->value => [
+                'title_en' => 'Refund Request Submitted',
+                'title_ar' => 'تم تقديم طلب استرداد',
+                'body_en'  => 'Your refund request of {{amount}} has been submitted and is under review.',
+                'body_ar'  => 'تم تقديم طلب استرداد بقيمة {{amount}} وهو قيد المراجعة.',
+                'channels' => $standard,
+            ],
+            NotificationType::RefundCompleted->value => [
+                'title_en' => 'Refund Completed',
+                'title_ar' => 'تم تنفيذ الاسترداد',
+                'body_en'  => 'Your refund of {{amount}} has been processed. Reference: {{transaction_reference}}.',
+                'body_ar'  => 'تم تنفيذ استرداد بقيمة {{amount}}. المرجع: {{transaction_reference}}.',
+                'channels' => $important,
             ],
         ];
 
-        foreach ($templates as $template) {
-            NotificationTemplate::query()->updateOrCreate(
-                ['type' => $template['type']],
-                [
-                    ...$template,
-                    'channels' => ['in_app', 'email'],
-                    'is_active' => true,
-                ]
-            );
+        foreach ($templates as $type => $template) {
+            DB::table('notification_templates')->insert([
+                'type'       => $type,
+                'title_en'   => $template['title_en'],
+                'title_ar'   => $template['title_ar'],
+                'body_en'    => $template['body_en'],
+                'body_ar'    => $template['body_ar'],
+                'channels'   => json_encode($template['channels']),
+                'is_active'  => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
         }
+
+        $this->command->info('✅ Notification templates seeded (' . count($templates) . ' templates).');
     }
 }

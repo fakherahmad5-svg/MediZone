@@ -4,26 +4,35 @@ namespace Database\Seeders;
 
 use App\Models\Clinic;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class ClinicSeeder extends Seeder
 {
     public function run(): void
     {
-        $clinics = [
-            [
-                'name' => 'المجمع الطبي الافتراضي -ض',
-                'phone' => '+966112345678',
-                'email' => 'riyadh@vmc.sa',
-                'address' => 'حي العليا، طريق الملك فهد، الرياض',
-            ],
-        
-        ];
+        $clinicId = DB::table('clinics')->insertGetId([
+            'name'       => 'Virtual Medical Complex - Main Branch',
+            'phone'      => '+963-11-0000000',
+            'email'      => 'main@vmc.test',
+            'address'    => 'Damascus, Syria',
+            'latitude'   => 33.5138,
+            'longitude'  => 36.2765,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
-        foreach ($clinics as $clinic) {
-            Clinic::query()->firstOrCreate(
-                ['email' => $clinic['email']],
-                $clinic
-            );
-        }
+
+        $departmentIds = DB::table('departments')->pluck('id');
+
+        $pivotRows = $departmentIds->map(fn ($deptId) => [
+            'clinic_id'     => $clinicId,
+            'department_id' => $deptId,
+            'created_at'    => now(),
+            'updated_at'    => now(),
+        ])->toArray();
+
+        DB::table('clinic_departments')->insert($pivotRows);
+
+        $this->command->info("✅ Default clinic seeded (ID: {$clinicId}) with all departments linked.");
     }
 }

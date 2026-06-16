@@ -4,32 +4,37 @@ namespace Database\Seeders;
 
 use App\Models\Drug;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class DrugSeeder extends Seeder
 {
     public function run(): void
     {
         $drugs = [
-            ['name' => 'Paracetamol', 'form' => 'Tablet', 'strength' => '500mg'],
-            ['name' => 'Ibuprofen', 'form' => 'Tablet', 'strength' => '400mg'],
-            ['name' => 'Amoxicillin', 'form' => 'Capsule', 'strength' => '500mg'],
-            ['name' => 'Metformin', 'form' => 'Tablet', 'strength' => '850mg'],
-            ['name' => 'Amlodipine', 'form' => 'Tablet', 'strength' => '5mg'],
-            ['name' => 'Omeprazole', 'form' => 'Capsule', 'strength' => '20mg'],
-            ['name' => 'Salbutamol', 'form' => 'Inhaler', 'strength' => '100mcg'],
-            ['name' => 'Atorvastatin', 'form' => 'Tablet', 'strength' => '20mg'],
-            ['name' => 'Cetirizine', 'form' => 'Tablet', 'strength' => '10mg'],
-            ['name' => 'Losartan', 'form' => 'Tablet', 'strength' => '50mg'],
+            ['name' => 'Paracetamol',   'form' => 'tablet',     'strength' => '500mg'],
+            ['name' => 'Paracetamol',   'form' => 'syrup',      'strength' => '120mg/5ml'],
+            ['name' => 'Ibuprofen',     'form' => 'tablet',     'strength' => '400mg'],
+            ['name' => 'Amoxicillin',   'form' => 'capsule',    'strength' => '500mg'],
+            ['name' => 'Amoxicillin',   'form' => 'syrup',      'strength' => '250mg/5ml'],
+            ['name' => 'Metformin',     'form' => 'tablet',     'strength' => '500mg'],
+            ['name' => 'Atorvastatin',  'form' => 'tablet',     'strength' => '20mg'],
+            ['name' => 'Omeprazole',    'form' => 'capsule',    'strength' => '20mg'],
+            ['name' => 'Cetirizine',    'form' => 'tablet',     'strength' => '10mg'],
+            ['name' => 'Salbutamol',    'form' => 'inhaler',    'strength' => '100mcg'],
+            ['name' => 'Insulin Glargine', 'form' => 'injection', 'strength' => '100units/ml'],
+            ['name' => 'Losartan',      'form' => 'tablet',     'strength' => '50mg'],
+            ['name' => 'Azithromycin',  'form' => 'tablet',     'strength' => '250mg'],
+            ['name' => 'Diclofenac',    'form' => 'gel',        'strength' => '1%'],
+            ['name' => 'Aspirin',       'form' => 'tablet',     'strength' => '100mg'],
         ];
 
         foreach ($drugs as $drug) {
-            Drug::query()->firstOrCreate(
-                [
-                    'name' => $drug['name'],
-                    'strength' => $drug['strength'],
-                ],
-                $drug
-            );
+            DB::table('drugs')->insert(array_merge($drug, [
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]));
         }
+
+        $this->command->info('✅ Drugs seeded (' . count($drugs) . ' drugs).');
     }
 }

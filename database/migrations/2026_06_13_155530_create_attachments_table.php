@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('mime_type')->nullable();
             $table->integer('file_size')->nullable();
             $table->string('checksum')->nullable();
-            $table->boolean('is_encrypted')->default(false);
+            $table->boolean('is_encrypted')->default(true);
             $table->timestamps();
         });
     }

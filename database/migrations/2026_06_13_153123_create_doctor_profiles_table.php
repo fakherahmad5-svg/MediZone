@@ -11,11 +11,12 @@ return new class extends Migration
         Schema::create('doctor_profiles', function (Blueprint $table) {
             $table->id();
             $table->foreignId('doctor_id')->constrained('doctors')->cascadeOnDelete();
-            $table->text('bio')->nullable();
-            $table->text('qualifications')->nullable();
+            $table->text('biography')->nullable();
+            $table->json('qualifications')->nullable();
             $table->decimal('consultation_fee', 10, 2)->nullable();
             $table->string('photo_path')->nullable();
             $table->timestamps();
+            $table->json('languages')->nullable();
         });
     }
 
@@ -23,4 +24,4 @@ return new class extends Migration
     {
         Schema::dropIfExists('doctor_profiles');
     }
-}; 
+};

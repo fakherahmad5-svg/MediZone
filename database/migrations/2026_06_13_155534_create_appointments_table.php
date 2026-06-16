@@ -1,5 +1,7 @@
 <?php
 
+use App\Core\Enums\AppointmentStatus;
+use App\Core\Enums\ConsultationType;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -13,10 +15,10 @@ return new class extends Migration
             $table->foreignId('clinic_id')->constrained('clinics')->cascadeOnDelete();
             $table->foreignId('patient_id')->constrained('patients')->cascadeOnDelete();
             $table->foreignId('doctor_id')->constrained('doctors')->cascadeOnDelete();
-            $table->foreignId('slot_id')->constrained('doctor_time_slots')->cascadeOnDelete();
-            $table->enum('status', ['scheduled', 'completed', 'cancelled', 'no_show'])->default('scheduled');
-            $table->string('encounter_type')->nullable();
-            $table->decimal('price', 10, 2)->nullable();
+            $table->foreignId('slot_id')->nullable()->constrained('doctor_time_slots')->cascadeOnDelete();
+            $table->enum('status', AppointmentStatus::values())->default(AppointmentStatus::Scheduled->value);
+            $table->enum('encounter_type', ConsultationType::values());
+            $table->decimal('price', 10, 2);;
             $table->text('cancellation_reason')->nullable();
             $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
             $table->text('notes')->nullable();

@@ -1,5 +1,6 @@
 <?php
 
+use App\Core\Enums\NotificationType;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -10,25 +11,7 @@ return new class extends Migration
     {
         Schema::create('notification_templates', function (Blueprint $table) {
             $table->id();
-            $table->enum('type', [
-                'appointment_confirmed',
-                'appointment_cancelled',
-                'appointment_reminder',
-                'appointment_rescheduled',
-                'appointment_completed',
-                'consultation_started',
-                'consultation_message_received',
-                'consultation_ended',
-                'payment_confirmed',
-                'payment_failed',
-                'invoice_issued',
-                'access_granted',
-                'access_revoked',
-                'doctor_verified',
-                'doctor_rejected',
-                'report_received',
-                'system_alert'
-            ])->unique();
+            $table->enum('type', NotificationType::values())->unique();
             $table->string('title_en');
             $table->string('title_ar');
             $table->text('body_en');

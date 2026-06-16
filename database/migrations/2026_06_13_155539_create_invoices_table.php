@@ -1,5 +1,6 @@
 <?php
 
+use App\Core\Enums\InvoiceStatus;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -14,7 +15,7 @@ return new class extends Migration
             $table->foreignId('patient_id')->constrained('patients')->cascadeOnDelete();
             $table->foreignId('appointment_id')->constrained('appointments')->cascadeOnDelete();
             $table->decimal('total_amount', 10, 2);
-            $table->enum('status', ['pending', 'paid', 'partially_paid', 'cancelled'])->default('pending');
+            $table->enum('status', InvoiceStatus::values())->default(InvoiceStatus::Pending->value);
             $table->timestamp('issued_at')->nullable();
             $table->timestamp('paid_at')->nullable();
             $table->timestamps();

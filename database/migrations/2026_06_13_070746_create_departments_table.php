@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('departments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('clinic_id')->constrained('clinics')->cascadeOnDelete();
+            //$table->foreignId('clinic_id')->constrained('clinics')->cascadeOnDelete();
             $table->string('name');
             $table->text('description')->nullable();
             $table->timestamps();

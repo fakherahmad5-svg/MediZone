@@ -14,7 +14,7 @@ return new class extends Migration
             $table->foreignId('doctor_id')->constrained('doctors')->cascadeOnDelete();
             $table->tinyInteger('consultation_duration')->default(30);
             $table->tinyInteger('break_duration')->default(0);
-            $table->smallInteger('max_patients')->default(20);
+            $table->smallInteger('max_patients')->nullable();
             $table->boolean('buffer_enabled')->default(false);
             $table->boolean('is_vacation_mode')->default(false);
             $table->boolean('is_active')->default(true);

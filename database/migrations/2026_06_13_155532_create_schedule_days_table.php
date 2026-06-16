@@ -11,8 +11,9 @@ return new class extends Migration
         Schema::create('schedule_days', function (Blueprint $table) {
             $table->id();
             $table->foreignId('schedule_config_id')->constrained('schedule_configs')->cascadeOnDelete();
-            $table->tinyInteger('day_of_week');
+            $table->unsignedTinyInteger('day_of_week');
             $table->boolean('is_active')->default(true);
+            $table->unique(['schedule_config_id', 'day_of_week']);
             $table->timestamps();
         });
     }

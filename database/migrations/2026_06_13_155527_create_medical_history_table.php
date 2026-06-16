@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('medical_history', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('patient_record_id')->nullable();
+            $table->foreignId('patient_record_id')->nullable()->constrained('patient_records')->cascadeOnDelete();
             $table->timestamp('recorded_at')->nullable();
             $table->timestamps();
         });

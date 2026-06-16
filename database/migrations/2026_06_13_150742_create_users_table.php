@@ -1,5 +1,7 @@
 <?php
 
+use App\Core\Enums\Gender;
+use App\Core\Enums\UserStatus;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -16,8 +18,9 @@ return new class extends Migration
             $table->string('password');
             $table->string('phone')->nullable();
             $table->date('dob')->nullable();
-            $table->enum('gender', ['male', 'female'])->nullable();
-            $table->enum('status', ['active', 'inactive', 'banned'])->default('active');
+            $table->enum('gender', Gender::values())->nullable();
+            $table->enum('status', UserStatus::values())->default(UserStatus::Active->value);
+            $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();
         });

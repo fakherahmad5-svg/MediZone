@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('encounters', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('appointment_id')->nullable();
+            $table->foreignId('appointment_id')->nullable()->constrained('appointments')->cascadeOnDelete()->nullOnDelete();
             $table->foreignId('patient_record_id')->constrained('patient_records')->cascadeOnDelete();
             $table->string('visit_type')->nullable();
             $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
