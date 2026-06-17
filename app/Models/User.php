@@ -2,10 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\Doctor;
-use App\Models\Guardian;
-use App\Models\Patient;
-use App\Models\Receptionist;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -65,5 +61,15 @@ class User extends Authenticatable
     public function guardians(): HasMany
     {
         return $this->hasMany(Guardian::class);
+    }
+
+    public function isActive(): bool
+    {
+        return $this->status === 'active';
+    }
+
+    public function isBanned(): bool
+    {
+        return $this->status === 'banned';
     }
 }

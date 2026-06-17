@@ -18,13 +18,4 @@ abstract class BaseResource extends JsonResource
     {
         return $date?->toDateString();
     }
-
-    protected function whenLoaded(string $relation, callable $callback): mixed
-    {
-        if ($this->relationLoaded($relation)) {
-            return $callback();
-        }
-
-        return $this->when(false, null);
-    }
 }

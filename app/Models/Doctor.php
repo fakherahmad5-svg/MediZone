@@ -7,6 +7,7 @@ use App\Models\Department;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -16,14 +17,23 @@ class Doctor extends Model
 
     protected $fillable = [
         'user_id',
-        'department_id',
         'license_number',
         'experience_years',
+        'verification_status',
+        'avg_rating',
+        'reviews_count',
     ];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function departments(): BelongsToMany
+    {
+        return $this->belongsToMany(Department::class, 'doctor_departments')
+            ->withPivot(['clinic_id', 'is_primary'])
+            ->withTimestamps();
     }
 
     public function department(): BelongsTo

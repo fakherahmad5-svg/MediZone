@@ -41,7 +41,12 @@ if (! function_exists('is_doctor')) {
 
     function is_doctor(): bool
     {
-        return auth()->check() && auth()->user()->role === 'doctor';
+        if (! auth()->check()) {
+            return false;
+        }
+
+        return app(\App\Modules\Auth\Services\UserRoleService::class)
+            ->hasRole(auth()->user(), 'doctor');
     }
 }
 
@@ -49,14 +54,24 @@ if (! function_exists('is_patient')) {
 
     function is_patient(): bool
     {
-        return auth()->check() && auth()->user()->role === 'patient';
+        if (! auth()->check()) {
+            return false;
+        }
+
+        return app(\App\Modules\Auth\Services\UserRoleService::class)
+            ->hasRole(auth()->user(), 'patient');
     }
 }
 
 if (! function_exists('is_admin')) {
     function is_admin(): bool
     {
-        return auth()->check() && auth()->user()->role === 'admin';
+        if (! auth()->check()) {
+            return false;
+        }
+
+        return app(\App\Modules\Auth\Services\UserRoleService::class)
+            ->hasRole(auth()->user(), 'admin');
     }
 }
 
