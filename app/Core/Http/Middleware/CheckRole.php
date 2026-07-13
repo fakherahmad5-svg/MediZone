@@ -24,6 +24,13 @@ class CheckRole
             ], 401);
         }
 
+        if (method_exists($user, 'isActive') && ! $user->isActive()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your account has been suspended.',
+            ], 403);
+        }
+
         if (! $this->userRoleService->hasRole($user, ...$roles)) {
             return response()->json([
                 'success' => false,

@@ -17,7 +17,7 @@ class AuthUserResource extends BaseResource
         $role = $roleService->getRole($this->resource);
 
         return [
-            // معلومات الحساب
+
             'id' => $this->id,
             'first_name' => $this->first_name,
             'last_name' => $this->last_name,
@@ -26,17 +26,12 @@ class AuthUserResource extends BaseResource
             'phone' => $this->phone,
             'dob' => $this->dob?->toDateString(),
             'gender' => $this->gender,
+            'address' => $this->address,
             'status' => $this->status,
             'created_at' => $this->created_at?->toIso8601String(),
-
-            // الدور والصلاحيات
             'role' => $role,
             'role_label' => UserRole::tryFrom((string) $role)?->label(),
-            'dashboard' => $roleService->getDashboard($this->resource),
-            'permissions' => $roleService->getPermissions($this->resource),
-            'clinics' => $this->clinicsList(),
 
-            // بيانات إضافية حسب نوع المستخدم
             'profile' => $this->profileByRole($role),
         ];
     }
@@ -58,7 +53,7 @@ class AuthUserResource extends BaseResource
             ];
         }
 
-        return $list;
+        return empty($list) ? null : $list;
     }
 
     /** @return array<string, mixed>|null */
@@ -125,11 +120,11 @@ class AuthUserResource extends BaseResource
 
         return [
             'doctor_id' => $this->doctor->id,
-            'license_number' => $this->doctor->license_number,
-            'experience_years' => $this->doctor->experience_years,
+            //'license_number' => $this->doctor->license_number,
+            //'experience_years' => $this->doctor->experience_years,
             'verification_status' => $this->doctor->verification_status,
-            'avg_rating' => $this->doctor->avg_rating,
             'departments' => $departments,
+            'clinics' => $this->clinicsList(),
         ];
     }
 
@@ -142,6 +137,7 @@ class AuthUserResource extends BaseResource
 
         return [
             'receptionist_id' => $this->receptionist->id,
+            'status' => $this->receptionist->status,
         ];
     }
 }

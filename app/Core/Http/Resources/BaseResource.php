@@ -18,4 +18,6 @@ abstract class BaseResource extends JsonResource
     {
         return $date?->toDateString();
     }
+
+
 }

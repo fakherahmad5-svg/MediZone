@@ -2,45 +2,68 @@
 
 namespace App\Modules\Auth\Services;
 
+use App\Core\Enums\ClinicStatus;
 use App\Core\Enums\DoctorVerificationStatus;
+use App\Core\Enums\ReceptionistsStatus;
 use App\Core\Enums\UserRole;
 use App\Core\Enums\UserStatus;
 use App\Core\Exceptions\BusinessException;
 use App\Core\Exceptions\ConflictException;
 use App\Core\Services\BaseService;
+use App\Models\Clinic;
 use App\Models\ClinicUser;
 use App\Models\Doctor;
+use App\Models\MedicalHistory;
 use App\Models\Patient;
 use App\Models\PatientRecord;
 use App\Models\Receptionist;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\DB;
 
 class RegistrationService extends BaseService
 {
-    public function createAccount(array $data): User
+    public function __construct(
+        private readonly UserRoleService $roles,
+    ) {}
+
+    public function createBasicAccount(array $data): User
     {
         $role = UserRole::from($data['role']);
-        $user = $this->createUserRecord($data);
+        $this->validateRoleCanSelfRegister($role);
 
-        if ($role === UserRole::Patient) {
-            $this->createPatient($user, $data);
-        }
+        $user = $this->createUserRecord($data,$role);
 
-        if ($role === UserRole::Doctor) {
-            $this->createDoctor($user, $data);
-        }
+        $this->attachRole($user, $role, clinicId: $data['clinic_id'] ?? null);
+        return $user;
+    }
 
-        if ($role === UserRole::Receptionist) {
-            $this->createReceptionist($user, $data);
-        }
+    public function completeProfile(User $user, array $data): void
+    {
+        $role = UserRole::from((string) $this->roles->getRole($user));
 
-        if (! in_array($role, [UserRole::Patient, UserRole::Doctor, UserRole::Receptionist], true)) {
+        match ($role) {
+            UserRole::Patient      => $this->completePatientProfile($user, $data),
+            UserRole::Doctor       => $this->completeDoctorProfile($user, $data),
+            UserRole::Receptionist => $this->completeReceptionistProfile($user, $data),
+            default                => null,
+        };
+        $user->update([
+            'dob'    => $data['dob'] ?? null,
+            'gender' => $data['gender'] ?? null,
+            'phone'  => $data['phone'] ?? null,
+            'address' => $data['address'] ?? null,
+        ]);
+
+        event(new Registered($user));
+    }
+
+    private function validateRoleCanSelfRegister(UserRole $role): void
+    {
+        if (! in_array($role->value, UserRole::selfRegisterable(), true)) {
             throw new BusinessException('This account type cannot self-register.');
         }
-
-        return $user;
     }
 
     public function doctorNeedsApproval(UserRole $role): bool
@@ -49,72 +72,123 @@ class RegistrationService extends BaseService
     }
 
     /** @param array<string, mixed> $data */
-    private function createUserRecord(array $data): User
+    private function createUserRecord(array $data,$role): User
     {
-        return User::query()->create([
+        $user = User::query()->create([
+            'ID_card_number' => $data['ID_card_number'],
             'first_name' => $data['first_name'],
             'last_name' => $data['last_name'],
             'email' => $data['email'],
-            'phone' => $data['phone'] ?? null,
             'password' => $data['password'],
-            'dob' => $data['dob'] ?? null,
-            'gender' => $data['gender'] ?? null,
-            'status' => UserStatus::Active->value,
+            'status' =>  UserStatus::Active->value,
         ]);
+        return $user;
     }
 
     /** @param array<string, mixed> $data */
-    private function createPatient(User $user, array $data): void
+    private function completePatientProfile(User $user, array $data): void
     {
         $patient = Patient::query()->create([
             'user_id' => $user->id,
             'blood_type' => $data['blood_type'] ?? null,
         ]);
 
-        PatientRecord::query()->create(['patient_id' => $patient->id]);
+        $record = PatientRecord::query()->create([
+            'patient_id' => $patient->id,
+        ]);
+
+        MedicalHistory::query()->create([
+            'patient_record_id' => $record->id,
+            'recorded_at'       => null,
+        ]);
     }
 
-    /** @param array<string, mixed> $data */
-    private function createDoctor(User $user, array $data): void
+    private function completeDoctorProfile(User $user, array $data): void
     {
+        $clinicId = $data['registration_mode'] === 'create_clinic'
+            ? $this->createClinicForDoctor($user, $data)
+            : $data['clinic_id'];
+
         $doctor = Doctor::query()->create([
             'user_id' => $user->id,
-            'license_number' => $data['license_number'],
+            'license_number' => $data['license_number']?? 1,
             'experience_years' => $data['experience_years'] ?? 0,
             'verification_status' => DoctorVerificationStatus::Pending->value,
         ]);
 
+        if (isset($data['license_file'])) {
+            $doctor->addMedia($data['license_file'])
+                ->toMediaCollection('license');
+        }
+
+        if (isset($data['id_card'])) {
+            $doctor->addMedia($data['id_card'])
+                ->toMediaCollection('id_card');
+        }
+        if (isset($data['photo'])) {
+            $doctor->addMedia($data['photo'])
+                ->toMediaCollection('photo');
+        }
+
+        if (isset($data['certificates'])) {
+            foreach ($data['certificates'] as $certificate) {
+                $doctor->addMedia($certificate)
+                    ->toMediaCollection('certificates');
+            }
+        }
+
         DB::table('doctor_departments')->insert([
             'doctor_id' => $doctor->id,
             'department_id' => $data['department_id'],
-            'clinic_id' => $data['clinic_id'],
+            'clinic_id' => $clinicId,
             'is_primary' => true,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-
-        $this->attachToClinic($user, $data['clinic_id'], UserRole::Doctor);
+        $user->clinicUsers()->update(['clinic_id' => $clinicId]);
     }
 
-    /** @param array<string, mixed> $data */
-    private function createReceptionist(User $user, array $data): void
+    private function createClinicForDoctor(User $user, array $data): int
     {
-        Receptionist::query()->create(['user_id' => $user->id]);
-        $this->attachToClinic($user, $data['clinic_id'], UserRole::Receptionist);
+        $clinic = Clinic::query()->create([
+            'name' => $data['clinic_name'],
+            'address' => $data['clinic_address'],
+            'phone' => $data['clinic_phone'] ?? null,
+            'owner_id' => $user->id,
+            'status' => ClinicStatus::Pending->value,
+        ]);
+
+        if (isset($data['clinic_license_file'])) {
+            $clinic->addMedia($data['clinic_license_file'])
+                ->toMediaCollection('license');
+        }
+        return $clinic->id;
     }
 
-    private function attachToClinic(User $user, int $clinicId, UserRole $role): void
+    private function completeReceptionistProfile(User $user, array $data): void
     {
-        $roleId = Role::query()->where('name', $role->value)->value('id');
+        Receptionist::query()->create([
+            'user_id' => $user->id,
+            'status' => ReceptionistsStatus::Pending->value,
+        ]);
+    }
+
+    private function attachRole(User $user, UserRole $role, ?int $clinicId): void
+    {
+        $roleId = Role::query()
+            ->where('name', $role->value)
+            ->value('id');
 
         if (! $roleId) {
-            throw new ConflictException("Role [{$role->value}] is not configured.");
+            throw new ConflictException(
+                "Role [{$role->value}] not found. Ensure RolePermissionSeeder has run."
+            );
         }
 
         ClinicUser::query()->create([
             'clinic_id' => $clinicId,
-            'user_id' => $user->id,
-            'role_id' => $roleId,
+            'user_id'   => $user->id,
+            'role_id'   => $roleId,
         ]);
     }
 }

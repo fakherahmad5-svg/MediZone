@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MedicalHistory extends Model
+
 {
+    protected $table = 'medical_history'; //
     protected $fillable = ['patient_record_id', 'recorded_at'];
 
     protected function casts(): array

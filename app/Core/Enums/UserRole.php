@@ -13,7 +13,6 @@ enum UserRole: string
     case Patient = 'patient';
     case Receptionist = 'receptionist';
 
-    /** اسم الشاشة الرئيسية في الـ frontend */
     public function dashboard(): string
     {
         return match ($this) {
@@ -24,7 +23,6 @@ enum UserRole: string
         };
     }
 
-    /** اسم مقروء للعرض في التطبيق */
     public function label(): string
     {
         return match ($this) {
@@ -35,7 +33,7 @@ enum UserRole: string
         };
     }
 
-    /** الأدوار المسموح يسجّلون حساب بأنفسهم */
+
     public static function selfRegisterable(): array
     {
         return [

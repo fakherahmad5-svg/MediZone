@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Auth\Controllers\VerificationController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
@@ -8,6 +9,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     // PUBLIC ROUTES
     // ──────────────────────────────────────────────────────────────────
     require base_path('app/Modules/Auth/routes.php');
+
 
     // ──────────────────────────────────────────────────────────────────
     // PROTECTED ROUTES
@@ -61,4 +63,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                 // require base_path('app/Modules/Administration/routes.php');
             });
     });
+
 });
+Route::get('/verify/{id}/{hash}', [VerificationController::class, 'verify'])
+    ->middleware(['signed', 'throttle:6,1'])
+    ->name('verification.verify');

@@ -21,4 +21,13 @@ class Role extends Model
     {
         return $this->hasMany(ClinicUser::class);
     }
+
+    public function hasPermission(string $permissionName): bool
+    {
+        if ($this->relationLoaded('permissions')) {
+            return $this->permissions->contains('name', $permissionName);
+        }
+
+        return $this->permissions()->where('name', $permissionName)->exists();
+    }
 }

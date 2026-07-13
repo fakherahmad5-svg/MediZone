@@ -3,6 +3,7 @@
 
 namespace App\Models;
 
+use App\Core\Enums\DoctorVerificationStatus;
 use App\Models\Department;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
@@ -10,10 +11,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Doctor extends Model
+class Doctor extends Model implements HasMedia
 {
-    use SoftDeletes;
+    use SoftDeletes , InteractsWithMedia;
 
     protected $fillable = [
         'user_id',
@@ -23,6 +26,15 @@ class Doctor extends Model
         'avg_rating',
         'reviews_count',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'verification_status' => DoctorVerificationStatus::class,
+            'avg_rating'          => 'float',
+        ];
+    }
+
 
     public function user(): BelongsTo
     {
@@ -34,11 +46,6 @@ class Doctor extends Model
         return $this->belongsToMany(Department::class, 'doctor_departments')
             ->withPivot(['clinic_id', 'is_primary'])
             ->withTimestamps();
-    }
-
-    public function department(): BelongsTo
-    {
-        return $this->belongsTo(Department::class);
     }
 
     public function appointments(): HasMany
@@ -94,5 +101,35 @@ class Doctor extends Model
     public function prescriptions(): HasMany
     {
         return $this->hasMany(Prescription::class);
+    }
+
+    public function isPending(): bool
+    {
+        return $this->verification_status === DoctorVerificationStatus::Pending;
+    }
+
+    public function isVerified(): bool
+    {
+        return $this->verification_status === DoctorVerificationStatus::Verified;
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('certificates')
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'application/pdf'])
+            ->useDisk('public');
+
+        $this->addMediaCollection('license')
+        ->acceptsMimeTypes(['image/jpeg', 'image/png', 'application/pdf'])
+            ->singleFile()
+            ->useDisk('public');
+
+        $this->addMediaCollection('id_card')
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'application/pdf'])
+            ->useDisk('public');
+
+        $this->addMediaCollection('photo')
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'application/pdf'])
+            ->useDisk('public');
     }
 }

@@ -13,8 +13,8 @@ class ClinicSeeder extends Seeder
         $clinicId = DB::table('clinics')->insertGetId([
             'name'       => 'Virtual Medical Complex - Main Branch',
             'phone'      => '+963-11-0000000',
-            'email'      => 'main@vmc.test',
             'address'    => 'Damascus, Syria',
+            'status'     => 'active',
             'latitude'   => 33.5138,
             'longitude'  => 36.2765,
             'created_at' => now(),

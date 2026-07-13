@@ -11,6 +11,7 @@ class AuthResult
         public ?string $token = null,
         public string $tokenType = 'Bearer',
         public bool $requiresVerification = false,
+        public readonly bool $pendingApproval = false,
     ) {}
 
     public function hasToken(): bool

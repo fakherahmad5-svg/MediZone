@@ -3,57 +3,54 @@
 namespace App\Modules\Auth\Services;
 
 use App\Core\Enums\DoctorVerificationStatus;
+use App\Core\Enums\ReceptionistsStatus;
 use App\Core\Enums\UserRole;
-use App\Core\Enums\UserStatus;
 use App\Core\Exceptions\AuthorizationException;
 use App\Core\Exceptions\BusinessException;
 use App\Core\Services\BaseService;
 use App\Models\AuditLog;
 use App\Models\User;
 use App\Modules\Auth\Data\AuthResult;
-use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Str;
 use Laravel\Sanctum\PersonalAccessToken;
+
 
 class AuthService extends BaseService
 {
     public function __construct(
         private readonly RegistrationService $registration,
         private readonly UserRoleService $roles,
+        private readonly EmailVerificationService $emailVerification,
+        private readonly PasswordResetService $passwordReset,
     ) {}
 
-    // -------------------------------------------------------------------------
+
     // Register / Login / Logout
-    // -------------------------------------------------------------------------
+
 
     public function register(array $data): AuthResult
     {
         return $this->transaction(function () use ($data) {
             $role = UserRole::from($data['role']);
-            $user = $this->registration->createAccount($data);
+            $user = $this->registration->createBasicAccount($data);
 
             $this->writeAudit($user, 'register', [
                 'role' => $role->value,
                 'email' => $user->email,
             ]);
 
+            $this->emailVerification->generateAndSendCode($user);
+
             $user = $this->roles->prepareUser($user->fresh());
-
-            if ($this->registration->doctorNeedsApproval($role)) {
-                return new AuthResult(user: $user, requiresVerification: true);
-            }
-
             $device = $data['device_name'] ?? "{$role->label()} Registration";
 
             return $this->loginResult($user, $device);
         });
     }
 
-    public function login(string $email, string $password, ?string $deviceName = null): AuthResult
+    public function login(array $data): AuthResult
     {
-        $user = $this->validateLogin($email, $password);
+        $user = $this->validateLogin($data['email'], $data['password']);
         $user = $this->roles->prepareUser($user);
 
         $this->writeAudit($user, 'login', [
@@ -73,59 +70,34 @@ class AuthService extends BaseService
         ]);
     }
 
-    // -------------------------------------------------------------------------
-    // Password
-    // -------------------------------------------------------------------------
 
-    /** @return array<string, mixed> */
+    // Password
+
+
     public function forgotPassword(string $email): array
     {
         $user = User::query()->where('email', $email)->first();
 
         if ($user) {
-            Password::sendResetLink(['email' => $email]);
+            $this->passwordReset->generateAndSendCode($user);
         }
 
-        $response = [
-            'message' => 'Password reset instructions have been sent if the account exists.',
+        return [
+            'message' => 'If this email exists, a reset code has been sent.',
         ];
-
-        if ($user && config('app.debug')) {
-            $response['debug'] = [
-                'reset_token' => Password::broker()->createToken($user),
-                'reset_endpoint' => url('/api/v1/auth/reset-password'),
-            ];
-        }
-
-        return $response;
     }
 
-    /** @param array<string, mixed> $data */
-    public function resetPassword(array $data): void
+    public function resetPassword(string $email, string $code, string $newPassword): void
     {
-        $status = Password::reset(
-            [
-                'email' => $data['email'],
-                'password' => $data['password'],
-                'password_confirmation' => $data['password_confirmation'] ?? $data['password'],
-                'token' => $data['token'],
-            ],
-            function (User $user, string $password): void {
-                $user->forceFill([
-                    'password' => $password,
-                    'remember_token' => Str::random(60),
-                ])->save();
+        $user = User::query()->where('email', $email)->first();
 
-                $user->tokens()->delete();
-                event(new PasswordReset($user));
-
-                $this->writeAudit($user, 'password_reset', ['email' => $user->email]);
-            }
-        );
-
-        if ($status !== Password::PASSWORD_RESET) {
-            throw new BusinessException(__($status));
+        if (! $user) {
+            throw new BusinessException('Invalid or expired reset code.');
         }
+
+        $this->passwordReset->verifyCodeAndReset($user, $code, $newPassword);
+
+        $this->writeAudit($user, 'password_reset', ['email' => $user->email]);
     }
 
     public function changePassword(User $user, string $currentPassword, string $newPassword): void
@@ -133,22 +105,23 @@ class AuthService extends BaseService
         if (! Hash::check($currentPassword, $user->password)) {
             throw new AuthorizationException('Current password is incorrect.');
         }
-
-        $user->update(['password' => $newPassword]);
+        $user->forceFill([
+            'password' => $newPassword,
+        ])->save();
+        $user->tokens()->where('id', '!=', $user->currentAccessToken()?->id)->delete();
 
         $this->writeAudit($user, 'password_change', ['email' => $user->email]);
     }
 
-    // -------------------------------------------------------------------------
+
     // Helpers
-    // -------------------------------------------------------------------------
 
     private function validateLogin(string $email, string $password): User
     {
         $user = User::query()->where('email', $email)->first();
 
         if (! $user || ! Hash::check($password, $user->password)) {
-            throw new AuthorizationException('Invalid email or password.');
+            throw new BusinessException('Invalid email or password.');
         }
 
         $user->load('doctor');
@@ -159,37 +132,61 @@ class AuthService extends BaseService
 
     private function ensureAccountIsActive(User $user): void
     {
+
         if ($user->isBanned()) {
-            throw new AuthorizationException('Your account has been suspended. Please contact support.');
+            throw new BusinessException('Your account has been suspended. Please contact support.');
         }
 
-        if ($user->status === UserStatus::Inactive->value) {
-            throw new AuthorizationException('Your account is inactive. Please contact support.');
+        if ($user->isInactive()) {
+            throw new BusinessException('Your account is inactive. Please contact support.');
         }
 
-        if (! $user->isActive()) {
-            throw new AuthorizationException('Your account is not active.');
+        if (! $user->hasVerifiedEmail()) {
+            throw new BusinessException(
+                'Please verify your email address before logging in. '
+            );
         }
 
-        if (! $user->doctor) {
+        if ($user->patient) {
             return;
         }
+        if ($user->doctor) {
+            $messages = [
+                DoctorVerificationStatus::Pending->value => 'Your doctor account is pending administrator verification.',
+                DoctorVerificationStatus::Rejected->value => 'Your doctor verification was rejected. Please contact support.',
+                DoctorVerificationStatus::Suspended->value => 'Your doctor account has been suspended.',
+            ];
 
-        $messages = [
-            DoctorVerificationStatus::Pending->value => 'Your doctor account is pending administrator verification.',
-            DoctorVerificationStatus::Rejected->value => 'Your doctor verification was rejected. Please contact support.',
-            DoctorVerificationStatus::Suspended->value => 'Your doctor account has been suspended.',
-        ];
+            $status = $user->doctor->verification_status instanceof DoctorVerificationStatus
+                ? $user->doctor->verification_status->value
+                : $user->doctor->verification_status;
 
-        $status = $user->doctor->verification_status;
+            if (isset($messages[$status])) {
+                throw new BusinessException($messages[$status]);
+            }
+        }
+        if ($user->receptionist) {
+            $messages = [
+                ReceptionistsStatus::Pending->value => 'Your account is pending administrator verification.',
+                ReceptionistsStatus::Rejected->value => 'Your verification was rejected. Please contact support.',
+                ReceptionistsStatus::Suspended->value => 'Your account has been suspended.',
+            ];
 
-        if (isset($messages[$status])) {
-            throw new AuthorizationException($messages[$status]);
+            $status = $user->receptionist->status instanceof ReceptionistsStatus
+                ? $user->receptionist->status->value
+                : $user->receptionist->status;
+
+            if (isset($messages[$status])) {
+                throw new BusinessException($messages[$status]);
+            }
         }
     }
 
     private function loginResult(User $user, string $deviceName): AuthResult
     {
+        if($user->tokens()){
+        $user->tokens()->delete();
+        }
         $token = $user->createToken($deviceName, $this->roles->getPermissions($user));
 
         return new AuthResult(user: $user, token: $token->plainTextToken);
@@ -236,6 +233,53 @@ class AuthService extends BaseService
             'new_values' => $details,
             'ip_address' => request()->ip(),
             'user_agent' => request()->userAgent(),
+        ]);
+    }
+
+
+    public function verifyEmailCode(User $user, string $code): void
+    {
+        $this->emailVerification->verifyCode($user, $code);
+
+        $this->writeAudit($user, 'email_verified', [
+            'email' => $user->email,
+        ]);
+    }
+
+    public function completeProfile(User $user, array $data): AuthResult
+    {
+        return $this->transaction(callback: function () use ($user, $data) {
+            if (! $user->hasVerifiedEmail()) {
+                throw new BusinessException(
+                    'Please verify your email address before completing your profile.'
+                );
+            }
+
+            $this->registration->completeProfile($user, $data);
+
+            $user = $this->roles->prepareUser($user->fresh());
+
+            $role = $this->roles->getRole($user);
+
+            if ($role === UserRole::Doctor->value || $role === UserRole::Doctor->value ) {
+                $user->tokens()->delete();
+                return new AuthResult(user: $user, pendingApproval: true);
+            }
+
+            $this->writeAudit($user, 'profile_completed', [
+                'email' => $user->email,
+            ]);
+
+            return new AuthResult(user: $user);
+        });
+    }
+
+    public function resendVerificationCode(User $user): void
+    {
+        $this->emailVerification->generateAndSendCode($user);
+
+        $this->writeAudit($user, 'email_verification_resent', [
+            'email' => $user->email,
         ]);
     }
 }

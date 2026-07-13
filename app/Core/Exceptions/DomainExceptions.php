@@ -12,6 +12,8 @@ class NotFoundException extends AppException
     }
 }
 
+
+
 class DomainValidationException extends AppException
 {
     public function __construct(

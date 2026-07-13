@@ -12,6 +12,7 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+            $table->integer('ID_card_number')->nullable()->unique();
             $table->string('first_name');
             $table->string('last_name');
             $table->string('email')->unique();
@@ -19,7 +20,9 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->date('dob')->nullable();
             $table->enum('gender', Gender::values())->nullable();
+            $table->string('address')->nullable();
             $table->enum('status', UserStatus::values())->default(UserStatus::Active->value);
+            $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();

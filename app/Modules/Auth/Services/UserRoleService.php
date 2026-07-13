@@ -32,11 +32,7 @@ class UserRoleService
             return $this->roleCache[$user->id];
         }
 
-        $role = $this->getClinicRole($user);
-
-        if ($role === null && $this->hasPatientProfile($user)) {
-            $role = UserRole::Patient->value;
-        }
+        $role = $this->resolveRoleFromRelationship($user);
 
         $this->roleCache[$user->id] = $role;
 
@@ -74,13 +70,11 @@ class UserRoleService
             ->with('permissions:id,name')
             ->first();
 
-        $permissions = [];
 
-        if ($role) {
-            foreach ($role->permissions as $permission) {
-                $permissions[] = $permission->name;
-            }
-        }
+
+        $permissions = $role
+            ? $role->permissions->pluck('name')->all()
+            : [];
 
         $this->permissionsCache[$user->id] = $permissions;
 
@@ -92,7 +86,7 @@ class UserRoleService
         return in_array($this->getRole($user), $roles, true);
     }
 
-    private function getClinicRole(User $user): ?string
+    private function resolveRoleFromRelationship(User $user): ?string
     {
         if ($user->relationLoaded('clinicUsers')) {
             foreach ($user->clinicUsers as $membership) {
@@ -102,13 +96,17 @@ class UserRoleService
             }
         }
 
-        $membership = $user->clinicUsers()->with('role')->first();
+        $membership = $user->clinicUsers()->with('role')->orderByRaw('clinic_id IS NULL DESC')->first();
 
-        if (! $membership || ! $membership->role) {
-            return null;
+        if ($membership?->role) {
+            return $membership->role->name;
         }
 
-        return $membership->role->name;
+        if ($this->hasPatientProfile($user)) {
+            return UserRole::Patient->value;
+        }
+
+        return null;
     }
 
     private function hasPatientProfile(User $user): bool
