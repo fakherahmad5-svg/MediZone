@@ -5,23 +5,32 @@ namespace App\Models;
 use App\Models\Doctor;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Department extends Model
 {
     protected $fillable = [
-        'clinic_id',
         'name',
         'description',
     ];
 
-    public function clinic(): BelongsTo
+    public function clinics(): BelongsToMany
     {
-        return $this->belongsTo(Clinic::class);
+        return $this->belongsToMany(Clinic::class, 'clinic_departments')
+            ->withTimestamps();
     }
 
-    public function doctors(): HasMany
+
+    public function doctors(): BelongsToMany
     {
-        return $this->hasMany(Doctor::class);
+        return $this->belongsToMany(Doctor::class, 'doctor_departments')
+            ->withPivot(['clinic_id', 'is_primary'])
+            ->withTimestamps();
+    }
+
+    public function doctorDepartments(): HasMany
+    {
+        return $this->hasMany(DoctorDepartment::class);
     }
 }

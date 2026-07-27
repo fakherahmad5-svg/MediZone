@@ -6,6 +6,7 @@ namespace App\Core\Enums;
 enum ClinicStatus: string
 {
     case Pending = 'pending';
-    case Approved = 'approved';
-    case Rejected = 'rejected';
+    case Active    = 'active';
+    case Rejected  = 'rejected';
+    case Suspended = 'suspended';
 }

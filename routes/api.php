@@ -10,6 +10,11 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     // ──────────────────────────────────────────────────────────────────
     require base_path('app/Modules/Auth/routes.php');
 
+    require base_path('app/Modules/Departments/routes.php');
+    require base_path('app/Modules/Clinics/routes.php');
+    require base_path('app/Modules/Doctors/routes.php');
+    require base_path('app/Modules/Receptionists/routes.php');
+    require base_path('app/Modules/Patient/routes.php');
 
     // ──────────────────────────────────────────────────────────────────
     // PROTECTED ROUTES

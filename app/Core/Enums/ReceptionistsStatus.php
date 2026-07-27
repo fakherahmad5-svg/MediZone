@@ -10,7 +10,7 @@ enum ReceptionistsStatus: string
     use EnumValues;
 
     case Pending   = 'pending';
-    case Verified  = 'verified';
+    case Approved  = 'approved';
     case Rejected  = 'rejected';
     case Suspended = 'suspended';
 }

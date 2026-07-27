@@ -82,6 +82,12 @@ class User extends Authenticatable implements \Illuminate\Contracts\Auth\MustVer
         return $this->hasOne(Receptionist::class);
     }
 
+    public function ownedClinics(): HasMany
+    {
+        return $this->hasMany(Clinic::class, 'owner_id');
+    }
+
+
     public function isBanned(): bool
     {
         return $this->status === UserStatus::Banned

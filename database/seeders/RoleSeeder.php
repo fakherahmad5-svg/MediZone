@@ -50,6 +50,8 @@ class RoleSeeder extends Seeder
             'reports.manage',
             'audit.view',
             'admin.dashboard',
+            'manage_receptionists',
+            'manage_clinics',
         ];
 
         foreach ($permissions as $permission) {

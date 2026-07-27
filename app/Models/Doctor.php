@@ -6,10 +6,12 @@ namespace App\Models;
 use App\Core\Enums\DoctorVerificationStatus;
 use App\Models\Department;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -18,23 +20,20 @@ class Doctor extends Model implements HasMedia
 {
     use SoftDeletes , InteractsWithMedia;
 
-    protected $fillable = [
-        'user_id',
-        'license_number',
-        'experience_years',
-        'verification_status',
-        'avg_rating',
-        'reviews_count',
-    ];
+    protected $guarded = [];
 
     protected function casts(): array
     {
         return [
             'verification_status' => DoctorVerificationStatus::class,
-            'avg_rating'          => 'float',
+            'practice_start_date'    => 'date'
         ];
     }
 
+    public function profile(): HasOne
+    {
+        return $this->hasOne(DoctorProfile::class);
+    }
 
     public function user(): BelongsTo
     {
@@ -47,6 +46,25 @@ class Doctor extends Model implements HasMedia
             ->withPivot(['clinic_id', 'is_primary'])
             ->withTimestamps();
     }
+
+    public function doctorDepartments(): HasMany
+    {
+        return $this->hasMany(DoctorDepartment::class);
+    }
+
+
+
+    /**
+     * [NEW] العيادات الفريدة التي ينتمي إليها الطبيب — مُشتقَّة من
+     * doctor_departments.clinic_id (قد يعمل بعدة عيادات).
+     */
+    public function clinics(): BelongsToMany
+    {
+        return $this->belongsToMany(Clinic::class, 'doctor_departments')
+            ->select('clinics.*')
+            ->distinct();
+    }
+
 
     public function appointments(): HasMany
     {
@@ -103,6 +121,18 @@ class Doctor extends Model implements HasMedia
         return $this->hasMany(Prescription::class);
     }
 
+    protected function experienceYears(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->practice_start_date
+                ? (int) $this->practice_start_date->diffInYears(now())
+                : null,
+        );
+    }
+
+
+    // ─── Status Helpers ───────────────────────────────────────────
+
     public function isPending(): bool
     {
         return $this->verification_status === DoctorVerificationStatus::Pending;
@@ -111,6 +141,39 @@ class Doctor extends Model implements HasMedia
     public function isVerified(): bool
     {
         return $this->verification_status === DoctorVerificationStatus::Verified;
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->verification_status === DoctorVerificationStatus::Rejected;
+    }
+
+    public function isSuspended(): bool
+    {
+        return $this->verification_status === DoctorVerificationStatus::Suspended;
+    }
+
+    // ─── Media Helpers ────────────────────────────────────────────
+
+    public function photoUrl(): ?string
+    {
+        return $this->getFirstMediaUrl('photo') ?: null;
+    }
+
+    public function licenseFileUrl(): ?string
+    {
+        return $this->getFirstMediaUrl('license') ?: null;
+    }
+
+    public function idCardUrl(): ?string
+    {
+        return $this->getFirstMediaUrl('id_card') ?: null;
+    }
+
+    /** @return array<int, string> */
+    public function certificateUrls(): array
+    {
+        return $this->getMedia('certificates')->map->getUrl()->all();
     }
 
     public function registerMediaCollections(): void

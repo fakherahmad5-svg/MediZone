@@ -35,12 +35,15 @@ class CompleteProfileRequest extends FormRequest
 //                'unique:doctors,license_number',
 //            ],
 //            'experience_years' => ['nullable', 'integer', 'min:0'],
-            'department_id' => [
+            'practice_start_date' => [
                 Rule::requiredIf($role === UserRole::Doctor->value),
-                'nullable',
-                'integer',
-                'exists:departments,id',
+                'nullable', 'date', 'before:today',
             ],
+            'department_ids' => [
+                Rule::requiredIf($role === UserRole::Doctor->value),
+                'nullable', 'array', 'min:1',
+            ],
+            'department_ids.*' => ['integer', 'distinct', 'exists:departments,id'],
 
             'registration_mode' => [$role === 'doctor' ? 'required' : 'prohibited', 'in:join_clinic,create_clinic'],
 

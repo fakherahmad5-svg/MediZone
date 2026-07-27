@@ -261,7 +261,7 @@ class AuthService extends BaseService
 
             $role = $this->roles->getRole($user);
 
-            if ($role === UserRole::Doctor->value || $role === UserRole::Doctor->value ) {
+            if ($role === UserRole::Doctor->value || $role === UserRole::Receptionist->value ) {
                 $user->tokens()->delete();
                 return new AuthResult(user: $user, pendingApproval: true);
             }

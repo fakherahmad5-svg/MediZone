@@ -15,9 +15,10 @@ class AdminUserSeeder extends Seeder
         $adminUserId = DB::table('users')->insertGetId([
             'first_name'        => 'System',
             'last_name'         => 'Administrator',
-            'email'             => 'admin@vmc.test',
+            'email'             => 'admin@gmail.com',
             'password'          => Hash::make('Admin@12345'),
             'status'            => UserStatus::Active->value,
+            'email_verified_at' => now(),
             'created_at'        => now(),
             'updated_at'        => now(),
         ]);

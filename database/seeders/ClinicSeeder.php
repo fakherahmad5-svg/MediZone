@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Core\Enums\ClinicStatus;
 use App\Models\Clinic;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -14,9 +15,9 @@ class ClinicSeeder extends Seeder
             'name'       => 'Virtual Medical Complex - Main Branch',
             'phone'      => '+963-11-0000000',
             'address'    => 'Damascus, Syria',
-            'status'     => 'active',
             'latitude'   => 33.5138,
             'longitude'  => 36.2765,
+            'status'     => ClinicStatus::Active->value,
             'created_at' => now(),
             'updated_at' => now(),
         ]);

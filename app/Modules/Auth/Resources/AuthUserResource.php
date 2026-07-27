@@ -120,8 +120,8 @@ class AuthUserResource extends BaseResource
 
         return [
             'doctor_id' => $this->doctor->id,
-            //'license_number' => $this->doctor->license_number,
-            //'experience_years' => $this->doctor->experience_years,
+            'practice_start_date' => $this->doctor->practice_start_date,
+            'experience_years' => $this->doctor->experience_years,
             'verification_status' => $this->doctor->verification_status,
             'departments' => $departments,
             'clinics' => $this->clinicsList(),

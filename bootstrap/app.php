@@ -40,19 +40,16 @@ return Application::configure(basePath: dirname(__DIR__))
 
     ->withMiddleware(function (Middleware $middleware) {
 
-        // Phase 0: ForceJsonResponse على كل API routes
         $middleware->prependToGroup('api', [
             \App\Core\Http\Middleware\ForceJsonResponse::class,
         ]);
 
         $middleware->alias([
-            // Phase 0 aliases (محفوظة)
+
             'role'         => \App\Core\Http\Middleware\CheckRole::class,
             'clinic.scope' => \App\Core\Http\Middleware\ClinicScope::class,
 
-            // Phase 2: إضافة 'verified' alias
-            // يُستخدَم في Routes كـ ->middleware('verified')
-            // يُرجع JSON 403 بدلاً من redirect (مهم للـ Flutter/React clients)
+
             'verified'     => EnsureEmailIsVerified::class,
         ]);
     })
@@ -61,7 +58,6 @@ return Application::configure(basePath: dirname(__DIR__))
 
     ->withExceptions(function (Exceptions $exceptions) {
 
-        // Phase 0: Exception Handler (محفوظ كاملاً)
         $exceptions->render(function (\Throwable $e, $request): ?JsonResponse {
 
             if (! $request->is('api/*') && ! $request->expectsJson()) {

@@ -12,10 +12,7 @@ return new class extends Migration
         Schema::create('doctors', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->string('license_number')->unique();
-            $table->unsignedSmallInteger('experience_years')->default(0);
-            $table->decimal('avg_rating', 3, 2)->default(0.00);
-            $table->unsignedInteger('reviews_count')->default(0);
+            $table->date('practice_start_date')->nullable();
             $table->enum('verification_status', DoctorVerificationStatus::values())->default(DoctorVerificationStatus::Pending->value);
             $table->timestamps();
             $table->softDeletes();

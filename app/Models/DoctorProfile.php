@@ -21,14 +21,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class DoctorProfile extends Model
 {
-    protected $fillable = [
-        'doctor_id',
-        'biography',
-        'qualifications',
-        'consultation_fee',
-        'photo_path',
-        'languages',
-    ];
+    protected $guarded = [];
 
     protected function casts(): array
     {

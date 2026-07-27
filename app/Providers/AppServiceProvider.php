@@ -22,9 +22,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Event::listen(
-            Registered::class,
-            SendEmailVerificationNotification::class,
-        );
+//        Event::listen(
+//            Registered::class,
+//            SendEmailVerificationNotification::class,
+//        );
     }
 }

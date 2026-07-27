@@ -109,42 +109,56 @@ class RegistrationService extends BaseService
             ? $this->createClinicForDoctor($user, $data)
             : $data['clinic_id'];
 
+        $departmentIds = $data['department_ids'];
+
+        if ($data['registration_mode'] === 'join_clinic') {
+            $clinicDepartmentRows = array_map(fn ($id) => [
+                'department_id' => $id,
+                'clinic_id'     => $clinicId,
+                'created_at'    => now(),
+                'updated_at'    => now(),
+            ], $departmentIds);
+
+            DB::table('clinic_departments')->insertOrIgnore($clinicDepartmentRows);
+        }
+
         $doctor = Doctor::query()->create([
             'user_id' => $user->id,
-            'license_number' => $data['license_number']?? 1,
-            'experience_years' => $data['experience_years'] ?? 0,
+            'practice_start_date' => $data['practice_start_date'] ?? null,
             'verification_status' => DoctorVerificationStatus::Pending->value,
         ]);
 
         if (isset($data['license_file'])) {
-            $doctor->addMedia($data['license_file'])
-                ->toMediaCollection('license');
+            $doctor->addMedia($data['license_file'])->toMediaCollection('license');
         }
 
         if (isset($data['id_card'])) {
-            $doctor->addMedia($data['id_card'])
-                ->toMediaCollection('id_card');
+            $doctor->addMedia($data['id_card'])->toMediaCollection('id_card');
         }
         if (isset($data['photo'])) {
-            $doctor->addMedia($data['photo'])
-                ->toMediaCollection('photo');
+            $doctor->addMedia($data['photo'])->toMediaCollection('photo');
         }
 
         if (isset($data['certificates'])) {
             foreach ($data['certificates'] as $certificate) {
-                $doctor->addMedia($certificate)
-                    ->toMediaCollection('certificates');
+                $doctor->addMedia($certificate)->toMediaCollection('certificates');
             }
         }
 
-        DB::table('doctor_departments')->insert([
-            'doctor_id' => $doctor->id,
-            'department_id' => $data['department_id'],
-            'clinic_id' => $clinicId,
-            'is_primary' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        $doctorDepartmentRows = [];
+        foreach ($departmentIds as $index => $departmentId) {
+            $doctorDepartmentRows[] = [
+                'doctor_id'     => $doctor->id,
+                'department_id' => $departmentId,
+                'clinic_id'     => $clinicId,
+                'is_primary'    => $index === 0,
+                'created_at'    => now(),
+                'updated_at'    => now(),
+            ];
+        }
+
+        DB::table('doctor_departments')->insert($doctorDepartmentRows);
+
         $user->clinicUsers()->update(['clinic_id' => $clinicId]);
     }
 
@@ -158,13 +172,21 @@ class RegistrationService extends BaseService
             'status' => ClinicStatus::Pending->value,
         ]);
 
+        $clinicDepartmentRows = array_map(fn ($id) => [
+            'department_id' => $id,
+            'clinic_id'     => $clinic->id,
+            'created_at'    => now(),
+            'updated_at'    => now(),
+        ], $data['department_ids']);
+
+        DB::table('clinic_departments')->insertOrIgnore($clinicDepartmentRows);
+
         if (isset($data['clinic_license_file'])) {
-            $clinic->addMedia($data['clinic_license_file'])
-                ->toMediaCollection('license');
+            $clinic->addMedia($data['clinic_license_file'])->toMediaCollection('license');
         }
+
         return $clinic->id;
     }
-
     private function completeReceptionistProfile(User $user, array $data): void
     {
         Receptionist::query()->create([

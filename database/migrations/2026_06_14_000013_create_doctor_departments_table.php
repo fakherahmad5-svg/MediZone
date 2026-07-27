@@ -18,7 +18,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['doctor_id', 'department_id', 'clinic_id'], 'doc_dept_clinic_unique');
-            $table->index(['department_id', 'clinic_id']); // UC-P01: بحث بالتخصص+العيادة
+            $table->index(['department_id', 'clinic_id']);
         });
     }
 

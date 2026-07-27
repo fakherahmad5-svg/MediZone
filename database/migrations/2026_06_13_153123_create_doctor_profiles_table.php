@@ -14,7 +14,6 @@ return new class extends Migration
             $table->text('biography')->nullable();
             $table->json('qualifications')->nullable();
             $table->decimal('consultation_fee', 10, 2)->nullable();
-            $table->string('photo_path')->nullable();
             $table->timestamps();
             $table->json('languages')->nullable();
         });
