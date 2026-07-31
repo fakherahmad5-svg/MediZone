@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Attachment extends Model
 {
+    const UPDATED_AT = null;
+
     protected $fillable = [
         'patient_record_id',
         'uploaded_by',
@@ -21,7 +23,10 @@ class Attachment extends Model
 
     protected function casts(): array
     {
-        return ['is_encrypted' => 'boolean'];
+        return [
+            'is_encrypted' => 'boolean',
+            'created_at'   => 'datetime',
+        ];
     }
 
     public function patientRecord(): BelongsTo
@@ -29,7 +34,7 @@ class Attachment extends Model
         return $this->belongsTo(PatientRecord::class);
     }
 
-    public function uploader(): BelongsTo
+    public function uploadedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'uploaded_by');
     }

@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\Patient;
+use App\Observers\PatientObserver;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Support\Facades\Event;
@@ -22,9 +24,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-//        Event::listen(
-//            Registered::class,
-//            SendEmailVerificationNotification::class,
-//        );
+        Patient::observe(PatientObserver::class);
     }
 }

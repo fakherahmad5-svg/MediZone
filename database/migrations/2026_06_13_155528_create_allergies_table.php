@@ -1,6 +1,7 @@
 <?php
 
 use App\Core\Enums\AllergySeverity;
+use App\Core\Enums\AllergyType;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -13,6 +14,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('medical_history_id')->constrained('medical_history')->cascadeOnDelete();
             $table->string('allergen');
+            $table->enum('allergen_type',AllergyType::values());
             $table->string('reaction')->nullable();
             $table->enum('severity', AllergySeverity::values())->nullable();
             $table->timestamps();

@@ -2,37 +2,27 @@
 
 namespace App\Models;
 
+use App\Core\Enums\MedicationSource;
+use App\Core\Enums\MedicationStatus;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Medication extends Model
 {
-    protected $fillable = [
-        'patient_record_id',
-        'drug_id',
-        'prescription_item_id',
-        'source',
-        'status',
-        'dosage',
-        'frequency',
-        'route',
-        'start_date',
-        'end_date',
-        'stopped_at',
-        'stop_reason',
-        'recorded_by',
-        'notes',
-    ];
+    protected $guarded = [];
 
     protected function casts(): array
     {
         return [
+            'source'     => MedicationSource::class,
+            'status'     => MedicationStatus::class,
             'start_date' => 'date',
             'end_date'   => 'date',
             'stopped_at' => 'date',
         ];
     }
+
 
     public function patientRecord(): BelongsTo
     {
@@ -52,5 +42,12 @@ class Medication extends Model
     public function recordedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'recorded_by');
+    }
+
+    // ─── Helpers ──────────────────────────────────────────────────
+
+    public function isEditableByPatient(): bool
+    {
+        return $this->source === MedicationSource::SelfReported;
     }
 }

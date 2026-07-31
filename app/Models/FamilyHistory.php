@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class FamilyHistory extends Model
 {
+    protected $table = 'family_history';
     protected $fillable = [
         'medical_history_id',
         'condition',

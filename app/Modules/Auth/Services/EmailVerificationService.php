@@ -20,7 +20,7 @@ class EmailVerificationService extends BaseService
         }
 
         $code = $this->generateCode();
-        print ($code);
+        //print ($code);
         EmailVerificationCode::query()
             ->where('user_id', $user->id)
             ->whereNull('used_at')

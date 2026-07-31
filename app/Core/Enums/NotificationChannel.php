@@ -11,5 +11,4 @@ enum NotificationChannel: string
     case InApp = 'in_app';
     case Push  = 'push';
     case Email = 'email';
-    case Sms   = 'sms';
 }

@@ -11,6 +11,5 @@ enum MessageType: string
     case Text      = 'text';
     case Image     = 'image';
     case File      = 'file';
-    case VoiceNote = 'voice_note';
     case System    = 'system';
 }

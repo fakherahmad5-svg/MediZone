@@ -38,8 +38,8 @@ class MedicalHistory extends Model
         return $this->hasMany(Surgery::class);
     }
 
-    public function familyHistory(): HasMany
+    public function familyHistories(): HasMany
     {
-        return $this->hasMany(FamilyHistory::class);
+        return $this->hasMany(FamilyHistory::class,);
     }
 }

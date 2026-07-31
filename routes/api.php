@@ -15,6 +15,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     require base_path('app/Modules/Doctors/routes.php');
     require base_path('app/Modules/Receptionists/routes.php');
     require base_path('app/Modules/Patient/routes.php');
+    require base_path('app/Modules/Medical/routes.php');
 
     // ──────────────────────────────────────────────────────────────────
     // PROTECTED ROUTES

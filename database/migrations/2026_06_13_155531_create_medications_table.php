@@ -1,5 +1,6 @@
 <?php
 
+use App\Core\Enums\MedicationRoute;
 use App\Core\Enums\MedicationSource;
 use App\Core\Enums\MedicationStatus;
 use Illuminate\Database\Migrations\Migration;
@@ -19,7 +20,7 @@ return new class extends Migration
             $table->enum('status', MedicationStatus::values())->default(MedicationStatus::Active->value);
             $table->string('dosage')->nullable();
             $table->string('frequency')->nullable();
-            $table->string('route')->nullable();
+            $table->enum('route',MedicationRoute::values())->nullable();
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
             $table->date('stopped_at')->nullable();
