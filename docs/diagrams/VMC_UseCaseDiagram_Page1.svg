@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2600" height="1800" viewBox="0 0 2600 1800">
+<defs>
+<marker id="arr" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#555"/></marker>
+<marker id="arrActor" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#888"/></marker>
+</defs>
+<rect width="2600" height="1800" fill="#FAFAFA"/>
+<text x="1300.0" y="55" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="36" font-weight="700">Virtual Medical Complex — Use Case Diagram</text>
+<text x="1300.0" y="92" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="21" fill="#555">System Overview · All Actors &amp; Use Cases</text>
+<text x="2550" y="40" text-anchor="end" font-size="14" fill="#888" font-family="Segoe UI, Arial, sans-serif">Virtual Medical Complex Platform | UML Use Case Diagram · Page 1 of 5</text>
+<rect x="170" y="125" width="2260" height="1480" rx="18" fill="none" stroke="#333" stroke-width="2.5" stroke-dasharray="12,6"/>
+<text x="1300.0" y="1595" text-anchor="middle" font-size="16" font-weight="600" font-family="Segoe UI, Arial, sans-serif" fill="#333">«System Boundary: Virtual Medical Complex Platform»</text>
+<rect x="210" y="150" width="900" height="115" rx="14" fill="#FFF8E7" stroke="#D4AF37" stroke-width="2"/>
+<rect x="210" y="150" width="900" height="44" rx="14" fill="#E8C547"/>
+<rect x="210" y="180" width="900" height="14" fill="#E8C547"/>
+<text x="660.0" y="180" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#1a1a1a">Common / Authentication</text>
+<rect x="210" y="290" width="680" height="560" rx="14" fill="#EEF7EE" stroke="#5A9A5A" stroke-width="2"/>
+<rect x="210" y="290" width="680" height="44" rx="14" fill="#7CB87C"/>
+<rect x="210" y="320" width="680" height="14" fill="#7CB87C"/>
+<text x="550.0" y="320" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#1a1a1a">Patient Module</text>
+<rect x="210" y="880" width="980" height="300" rx="14" fill="#F3ECFA" stroke="#9678B8" stroke-width="2"/>
+<rect x="210" y="880" width="980" height="44" rx="14" fill="#B48FD4"/>
+<rect x="210" y="910" width="980" height="14" fill="#B48FD4"/>
+<text x="700.0" y="910" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#1a1a1a">Doctor Module</text>
+<rect x="1620" y="290" width="460" height="500" rx="14" fill="#FFF3E8" stroke="#D4894A" stroke-width="2"/>
+<rect x="1620" y="290" width="460" height="44" rx="14" fill="#F0A868"/>
+<rect x="1620" y="320" width="460" height="14" fill="#F0A868"/>
+<text x="1850.0" y="320" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#1a1a1a">Receptionist Module</text>
+<rect x="1620" y="880" width="460" height="340" rx="14" fill="#E8F2FC" stroke="#4A88C8" stroke-width="2"/>
+<rect x="1620" y="880" width="460" height="44" rx="14" fill="#6FA8E8"/>
+<rect x="1620" y="910" width="460" height="14" fill="#6FA8E8"/>
+<text x="1850.0" y="910" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#1a1a1a">Administrator Module</text>
+<ellipse cx="380" cy="215" rx="72.5" ry="17" fill="#FFFDF5" stroke="#333" stroke-width="1.5"/><text x="380" y="220" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Register Account</text>
+<ellipse cx="580" cy="215" rx="72.5" ry="17" fill="#FFFDF5" stroke="#333" stroke-width="1.5"/><text x="580" y="220" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Login</text>
+<ellipse cx="780" cy="215" rx="72.5" ry="17" fill="#FFFDF5" stroke="#333" stroke-width="1.5"/><text x="780" y="220" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Logout</text>
+<ellipse cx="980" cy="215" rx="72.5" ry="17" fill="#FFFDF5" stroke="#333" stroke-width="1.5"/><text x="980" y="220" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Reset Password</text>
+<ellipse cx="300" cy="360" rx="72.5" ry="17" fill="#F8FBF8" stroke="#333" stroke-width="1.5"/><text x="300" y="365" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Search Doctors</text>
+<ellipse cx="520" cy="360" rx="72.5" ry="17" fill="#F8FBF8" stroke="#333" stroke-width="1.5"/><text x="520" y="365" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">View Doctor Profile</text>
+<ellipse cx="760" cy="360" rx="72.5" ry="17" fill="#F8FBF8" stroke="#333" stroke-width="1.5"/><text x="760" y="365" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Book Appointment</text>
+<ellipse cx="300" cy="450" rx="72.5" ry="17" fill="#F8FBF8" stroke="#333" stroke-width="1.5"/><text x="300" y="455" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Cancel Appointment</text>
+<ellipse cx="520" cy="450" rx="72.5" ry="17" fill="#F8FBF8" stroke="#333" stroke-width="1.5"/><text x="520" y="455" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Reschedule Appt.</text>
+<ellipse cx="760" cy="450" rx="72.5" ry="17" fill="#F8FBF8" stroke="#333" stroke-width="1.5"/><text x="760" y="455" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Consultation Chat</text>
+<ellipse cx="300" cy="540" rx="72.5" ry="17" fill="#F8FBF8" stroke="#333" stroke-width="1.5"/><text x="300" y="545" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">View Medical Record</text>
+<ellipse cx="520" cy="540" rx="77.0" ry="17" fill="#F8FBF8" stroke="#333" stroke-width="1.5"/><text x="520" y="545" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Update Medical History</text>
+<ellipse cx="760" cy="540" rx="72.5" ry="17" fill="#F8FBF8" stroke="#333" stroke-width="1.5"/><text x="760" y="545" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Rate Doctor</text>
+<ellipse cx="300" cy="630" rx="72.5" ry="17" fill="#F8FBF8" stroke="#333" stroke-width="1.5"/><text x="300" y="635" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Add to Favorites</text>
+<ellipse cx="520" cy="630" rx="72.5" ry="17" fill="#F8FBF8" stroke="#333" stroke-width="1.5"/><text x="520" y="635" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Report Doctor</text>
+<ellipse cx="760" cy="630" rx="72.5" ry="17" fill="#F8FBF8" stroke="#333" stroke-width="1.5"/><text x="760" y="635" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Make Payment</text>
+<ellipse cx="520" cy="720" rx="72.5" ry="17" fill="#F8FBF8" stroke="#333" stroke-width="1.5"/><text x="520" y="725" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">View Notifications</text>
+<ellipse cx="340" cy="960" rx="72.5" ry="17" fill="#FBF8FD" stroke="#333" stroke-width="1.5"/><text x="340" y="965" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Manage Profile</text>
+<ellipse cx="580" cy="960" rx="72.5" ry="17" fill="#FBF8FD" stroke="#333" stroke-width="1.5"/><text x="580" y="965" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Manage Availability</text>
+<ellipse cx="820" cy="960" rx="72.5" ry="17" fill="#FBF8FD" stroke="#333" stroke-width="1.5"/><text x="820" y="965" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Manage Time Slots</text>
+<ellipse cx="1060" cy="960" rx="72.5" ry="17" fill="#FBF8FD" stroke="#333" stroke-width="1.5"/><text x="1060" y="965" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">View Appointments</text>
+<ellipse cx="340" cy="1050" rx="72.5" ry="17" fill="#FBF8FD" stroke="#333" stroke-width="1.5"/><text x="340" y="1055" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Manage Encounters</text>
+<ellipse cx="580" cy="1050" rx="72.5" ry="17" fill="#FBF8FD" stroke="#333" stroke-width="1.5"/><text x="580" y="1055" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">View Medical Records</text>
+<ellipse cx="820" cy="1050" rx="72.5" ry="17" fill="#FBF8FD" stroke="#333" stroke-width="1.5"/><text x="820" y="1055" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Consultation Chat</text>
+<ellipse cx="1060" cy="1050" rx="72.5" ry="17" fill="#FBF8FD" stroke="#333" stroke-width="1.5"/><text x="1060" y="1055" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Appt. Exceptions</text>
+<ellipse cx="1720" cy="360" rx="77.0" ry="17" fill="#FFFAF5" stroke="#333" stroke-width="1.5"/><text x="1720" y="365" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Book Appt. for Patient</text>
+<ellipse cx="1960" cy="360" rx="72.5" ry="17" fill="#FFFAF5" stroke="#333" stroke-width="1.5"/><text x="1960" y="365" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Manage Visit Status</text>
+<ellipse cx="1960" cy="450" rx="72.5" ry="17" fill="#FFFAF5" stroke="#333" stroke-width="1.5"/><text x="1960" y="455" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">View Appointments</text>
+<ellipse cx="1720" cy="540" rx="72.5" ry="17" fill="#FFFAF5" stroke="#333" stroke-width="1.5"/><text x="1720" y="545" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Manage Time Slots</text>
+<ellipse cx="1960" cy="540" rx="72.5" ry="17" fill="#FFFAF5" stroke="#333" stroke-width="1.5"/><text x="1960" y="545" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Register Patient</text>
+<ellipse cx="1720" cy="630" rx="91.0" ry="17" fill="#FFFAF5" stroke="#333" stroke-width="1.5"/><text x="1720" y="635" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Reschedule Affected Appts.</text>
+<ellipse cx="1720" cy="960" rx="72.5" ry="17" fill="#F5FAFF" stroke="#333" stroke-width="1.5"/><text x="1720" y="965" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Manage Doctors</text>
+<ellipse cx="1960" cy="960" rx="72.5" ry="17" fill="#F5FAFF" stroke="#333" stroke-width="1.5"/><text x="1960" y="965" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Verify Doctor</text>
+<ellipse cx="1720" cy="1050" rx="72.5" ry="17" fill="#F5FAFF" stroke="#333" stroke-width="1.5"/><text x="1720" y="1055" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Manage Clinics</text>
+<ellipse cx="1960" cy="1050" rx="72.5" ry="17" fill="#F5FAFF" stroke="#333" stroke-width="1.5"/><text x="1960" y="1055" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">Handle Reports</text>
+<ellipse cx="1840" cy="1140" rx="72.5" ry="17" fill="#F5FAFF" stroke="#333" stroke-width="1.5"/><text x="1840" y="1145" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12.5" fill="#111">View Analytics</text>
+<line x1="300" y1="360" x2="520" y2="360" stroke="#555" stroke-width="1.2" stroke-dasharray="none" marker-end="url(#arr)"/><text x="410.0" y="344.0" text-anchor="middle" font-size="10.5" fill="#555" font-family="Segoe UI, Arial, sans-serif"><<Extend>></text><text x="410.0" y="357.0" text-anchor="middle" font-size="9.5" fill="#777" font-family="Segoe UI, Arial, sans-serif">Patient selects result</text>
+<line x1="300" y1="360" x2="760" y2="360" stroke="#555" stroke-width="1.2" stroke-dasharray="none" marker-end="url(#arr)"/><text x="530.0" y="344.0" text-anchor="middle" font-size="10.5" fill="#555" font-family="Segoe UI, Arial, sans-serif"><<Extend>></text><text x="530.0" y="357.0" text-anchor="middle" font-size="9.5" fill="#777" font-family="Segoe UI, Arial, sans-serif">Patient chooses to book</text>
+<line x1="520" y1="360" x2="760" y2="360" stroke="#555" stroke-width="1.2" stroke-dasharray="none" marker-end="url(#arr)"/><text x="640.0" y="344.0" text-anchor="middle" font-size="10.5" fill="#555" font-family="Segoe UI, Arial, sans-serif"><<Extend>></text><text x="640.0" y="357.0" text-anchor="middle" font-size="9.5" fill="#777" font-family="Segoe UI, Arial, sans-serif">Patient chooses to book</text>
+<line x1="520" y1="360" x2="300" y2="630" stroke="#555" stroke-width="1.2" stroke-dasharray="none" marker-end="url(#arr)"/><text x="410.0" y="479.0" text-anchor="middle" font-size="10.5" fill="#555" font-family="Segoe UI, Arial, sans-serif"><<Extend>></text><text x="410.0" y="492.0" text-anchor="middle" font-size="9.5" fill="#777" font-family="Segoe UI, Arial, sans-serif">Optional action</text>
+<line x1="520" y1="360" x2="520" y2="630" stroke="#555" stroke-width="1.2" stroke-dasharray="none" marker-end="url(#arr)"/><text x="520.0" y="479.0" text-anchor="middle" font-size="10.5" fill="#555" font-family="Segoe UI, Arial, sans-serif"><<Extend>></text><text x="520.0" y="492.0" text-anchor="middle" font-size="9.5" fill="#777" font-family="Segoe UI, Arial, sans-serif">Optional action</text>
+<line x1="760" y1="360" x2="760" y2="630" stroke="#555" stroke-width="1.2" stroke-dasharray="6,4" marker-end="url(#arr)"/><text x="760.0" y="479.0" text-anchor="middle" font-size="10.5" fill="#555" font-family="Segoe UI, Arial, sans-serif"><<Include>></text><text x="760.0" y="492.0" text-anchor="middle" font-size="9.5" fill="#777" font-family="Segoe UI, Arial, sans-serif">Payment required</text>
+<line x1="300" y1="450" x2="520" y2="450" stroke="#555" stroke-width="1.2" stroke-dasharray="none" marker-end="url(#arr)"/><text x="410.0" y="434.0" text-anchor="middle" font-size="10.5" fill="#555" font-family="Segoe UI, Arial, sans-serif"><<Extend>></text><text x="410.0" y="447.0" text-anchor="middle" font-size="9.5" fill="#777" font-family="Segoe UI, Arial, sans-serif">Patient reschedules</text>
+<line x1="760" y1="450" x2="300" y2="540" stroke="#555" stroke-width="1.2" stroke-dasharray="6,4" marker-end="url(#arr)"/><text x="530.0" y="479.0" text-anchor="middle" font-size="10.5" fill="#555" font-family="Segoe UI, Arial, sans-serif"><<Include>></text><text x="530.0" y="492.0" text-anchor="middle" font-size="9.5" fill="#777" font-family="Segoe UI, Arial, sans-serif">Chat accesses record</text>
+<line x1="760" y1="450" x2="760" y2="540" stroke="#555" stroke-width="1.2" stroke-dasharray="none" marker-end="url(#arr)"/><text x="760.0" y="479.0" text-anchor="middle" font-size="10.5" fill="#555" font-family="Segoe UI, Arial, sans-serif"><<Extend>></text><text x="760.0" y="492.0" text-anchor="middle" font-size="9.5" fill="#777" font-family="Segoe UI, Arial, sans-serif">After consultation</text>
+<line x1="580" y1="960" x2="820" y2="960" stroke="#555" stroke-width="1.2" stroke-dasharray="none" marker-end="url(#arr)"/><text x="700.0" y="944.0" text-anchor="middle" font-size="10.5" fill="#555" font-family="Segoe UI, Arial, sans-serif"><<Extend>></text><text x="700.0" y="957.0" text-anchor="middle" font-size="9.5" fill="#777" font-family="Segoe UI, Arial, sans-serif">Doctor sets slots</text>
+<line x1="340" y1="1050" x2="580" y2="1050" stroke="#555" stroke-width="1.2" stroke-dasharray="6,4" marker-end="url(#arr)"/><text x="460.0" y="1034.0" text-anchor="middle" font-size="10.5" fill="#555" font-family="Segoe UI, Arial, sans-serif"><<Include>></text><text x="460.0" y="1047.0" text-anchor="middle" font-size="9.5" fill="#777" font-family="Segoe UI, Arial, sans-serif">Notes need record</text>
+<line x1="820" y1="1050" x2="580" y2="1050" stroke="#555" stroke-width="1.2" stroke-dasharray="6,4" marker-end="url(#arr)"/><text x="700.0" y="1034.0" text-anchor="middle" font-size="10.5" fill="#555" font-family="Segoe UI, Arial, sans-serif"><<Include>></text><text x="700.0" y="1047.0" text-anchor="middle" font-size="9.5" fill="#777" font-family="Segoe UI, Arial, sans-serif">Chat needs record</text>
+<line x1="1060" y1="1050" x2="580" y2="960" stroke="#555" stroke-width="1.2" stroke-dasharray="none" marker-end="url(#arr)"/><text x="820.0" y="989.0" text-anchor="middle" font-size="10.5" fill="#555" font-family="Segoe UI, Arial, sans-serif"><<Extend>></text><text x="820.0" y="1002.0" text-anchor="middle" font-size="9.5" fill="#777" font-family="Segoe UI, Arial, sans-serif">Doctor sets exception</text>
+<line x1="1060" y1="1050" x2="1720" y2="630" stroke="#555" stroke-width="1.2" stroke-dasharray="6,4" marker-end="url(#arr)"/><text x="1390.0" y="824.0" text-anchor="middle" font-size="10.5" fill="#555" font-family="Segoe UI, Arial, sans-serif"><<Include>></text><text x="1390.0" y="837.0" text-anchor="middle" font-size="9.5" fill="#777" font-family="Segoe UI, Arial, sans-serif">Updates affected appts.</text>
+<line x1="980" y1="215" x2="580" y2="215" stroke="#555" stroke-width="1.2" stroke-dasharray="6,4" marker-end="url(#arr)"/><text x="780.0" y="199.0" text-anchor="middle" font-size="10.5" fill="#555" font-family="Segoe UI, Arial, sans-serif"><<Include>></text><text x="780.0" y="212.0" text-anchor="middle" font-size="9.5" fill="#777" font-family="Segoe UI, Arial, sans-serif">Login after reset</text>
+<line x1="1960" y1="540" x2="380" y2="215" stroke="#555" stroke-width="1.2" stroke-dasharray="6,4" marker-end="url(#arr)"/><text x="1170.0" y="361.5" text-anchor="middle" font-size="10.5" fill="#555" font-family="Segoe UI, Arial, sans-serif"><<Include>></text><text x="1170.0" y="374.5" text-anchor="middle" font-size="9.5" fill="#777" font-family="Segoe UI, Arial, sans-serif">Creates account</text>
+<line x1="1720" y1="360" x2="1960" y2="450" stroke="#555" stroke-width="1.2" stroke-dasharray="6,4" marker-end="url(#arr)"/><text x="1840.0" y="389.0" text-anchor="middle" font-size="10.5" fill="#555" font-family="Segoe UI, Arial, sans-serif"><<Include>></text><text x="1840.0" y="402.0" text-anchor="middle" font-size="9.5" fill="#777" font-family="Segoe UI, Arial, sans-serif">Reflected in view</text>
+<line x1="1720" y1="630" x2="760" y2="360" stroke="#555" stroke-width="1.2" stroke-dasharray="6,4" marker-end="url(#arr)"/><text x="1240.0" y="479.0" text-anchor="middle" font-size="10.5" fill="#555" font-family="Segoe UI, Arial, sans-serif"><<Include>></text><text x="1240.0" y="492.0" text-anchor="middle" font-size="9.5" fill="#777" font-family="Segoe UI, Arial, sans-serif">Creates new booking</text>
+<line x1="1720" y1="960" x2="1960" y2="960" stroke="#555" stroke-width="1.2" stroke-dasharray="6,4" marker-end="url(#arr)"/><text x="1840.0" y="944.0" text-anchor="middle" font-size="10.5" fill="#555" font-family="Segoe UI, Arial, sans-serif"><<Include>></text><text x="1840.0" y="957.0" text-anchor="middle" font-size="9.5" fill="#777" font-family="Segoe UI, Arial, sans-serif">Part of management</text>
+<rect x="-70" y="532" width="130" height="56" rx="8" fill="#2E7D32" opacity="0.12" stroke="#2E7D32" stroke-width="2"/>
+<text x="-5" y="565" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#2E7D32">Patient</text>
+<line x1="190" y1="560" x2="285" y2="215" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="190" y1="560" x2="485" y2="215" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="190" y1="560" x2="685" y2="215" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="190" y1="560" x2="885" y2="215" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="190" y1="560" x2="205" y2="360" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="190" y1="560" x2="425" y2="360" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="190" y1="560" x2="665" y2="360" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="190" y1="560" x2="205" y2="450" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="190" y1="560" x2="425" y2="450" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="190" y1="560" x2="665" y2="450" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="190" y1="560" x2="205" y2="540" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="190" y1="560" x2="425" y2="540" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="190" y1="560" x2="665" y2="540" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="190" y1="560" x2="205" y2="630" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="190" y1="560" x2="425" y2="630" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="190" y1="560" x2="665" y2="630" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="190" y1="560" x2="425" y2="720" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<rect x="-70" y="992" width="130" height="56" rx="8" fill="#6A1B9A" opacity="0.12" stroke="#6A1B9A" stroke-width="2"/>
+<text x="-5" y="1025" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#6A1B9A">Doctor</text>
+<line x1="190" y1="1020" x2="485" y2="215" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="190" y1="1020" x2="685" y2="215" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="190" y1="1020" x2="885" y2="215" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="190" y1="1020" x2="245" y2="960" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="190" y1="1020" x2="485" y2="960" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="190" y1="1020" x2="725" y2="960" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="190" y1="1020" x2="965" y2="960" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="190" y1="1020" x2="245" y2="1050" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="190" y1="1020" x2="485" y2="1050" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="190" y1="1020" x2="725" y2="1050" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="190" y1="1020" x2="965" y2="1050" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<rect x="2460" y="532" width="130" height="56" rx="8" fill="#E65100" opacity="0.12" stroke="#E65100" stroke-width="2"/>
+<text x="2395" y="565" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#E65100">Receptionist</text>
+<line x1="2320" y1="560" x2="675" y2="215" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="2320" y1="560" x2="875" y2="215" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="2320" y1="560" x2="1075" y2="215" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="2320" y1="560" x2="1815" y2="360" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="2320" y1="560" x2="2055" y2="360" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="2320" y1="560" x2="2055" y2="450" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="2320" y1="560" x2="1815" y2="540" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="2320" y1="560" x2="2055" y2="540" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="2320" y1="560" x2="1815" y2="630" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<rect x="2460" y="992" width="130" height="56" rx="8" fill="#1565C0" opacity="0.12" stroke="#1565C0" stroke-width="2"/>
+<text x="2395" y="1025" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#1565C0">Administrator</text>
+<line x1="2320" y1="1020" x2="675" y2="215" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="2320" y1="1020" x2="875" y2="215" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="2320" y1="1020" x2="1075" y2="215" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="2320" y1="1020" x2="1815" y2="960" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="2320" y1="1020" x2="2055" y2="960" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="2320" y1="1020" x2="1815" y2="1050" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="2320" y1="1020" x2="2055" y2="1050" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+<line x1="2320" y1="1020" x2="1935" y2="1140" stroke="#888" stroke-width="1" marker-end="url(#arrActor)"/>
+</svg>
