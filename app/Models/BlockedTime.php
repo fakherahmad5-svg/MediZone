@@ -21,7 +21,10 @@ class BlockedTime extends Model
 
     protected function casts(): array
     {
-        return ['block_date' => 'date'];
+        return [
+            'block_date' => 'date',
+            'created_at' => 'datetime',
+            ];
     }
 
     public function clinic(): BelongsTo
@@ -32,5 +35,17 @@ class BlockedTime extends Model
     public function doctor(): BelongsTo
     {
         return $this->belongsTo(Doctor::class);
+    }
+
+    public function overlaps(\Carbon\Carbon $date, string $startTime, string $endTime): bool
+    {
+        $matchesDate = $this->block_date?->isSameDay($date) ?? false;
+        $matchesRecurring = $this->day_of_week !== null && $this->day_of_week == $date->dayOfWeek;
+
+        if (! $matchesDate && ! $matchesRecurring) {
+            return false;
+        }
+
+        return $startTime < $this->end_time && $endTime > $this->start_time;
     }
 }

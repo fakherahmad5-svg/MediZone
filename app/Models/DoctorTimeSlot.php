@@ -3,6 +3,7 @@
 
 namespace App\Models;
 
+use App\Core\Enums\SlotStatus;
 use App\Models\Clinic;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -45,5 +46,10 @@ class DoctorTimeSlot extends Model
     public function appointment(): HasOne
     {
         return $this->hasOne(Appointment::class, 'slot_id');
+    }
+
+    public function isAvailable(): bool
+    {
+        return $this->status === SlotStatus::Available;
     }
 }

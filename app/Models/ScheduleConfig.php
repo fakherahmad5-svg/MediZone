@@ -16,7 +16,8 @@ class ScheduleConfig extends Model
         'break_duration',
         'max_patients',
         'buffer_enabled',
-        'is_vacation_mode',
+        'vacation_start_date',
+        'vacation_end_date',
         'is_active',
     ];
 
@@ -24,7 +25,8 @@ class ScheduleConfig extends Model
     {
         return [
             'buffer_enabled'   => 'boolean',
-            'is_vacation_mode' => 'boolean',
+            'vacation_start_date' => 'date',
+            'vacation_end_date'   => 'date',
             'is_active'        => 'boolean',
         ];
     }
@@ -42,5 +44,10 @@ class ScheduleConfig extends Model
     public function days(): HasMany
     {
         return $this->hasMany(ScheduleDay::class);
+    }
+
+    public function stepMinutes(): int
+    {
+        return $this->consultation_duration + ($this->buffer_enabled ? $this->break_duration : 0);
     }
 }

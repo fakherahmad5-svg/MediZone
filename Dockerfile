@@ -60,7 +60,7 @@ RUN composer install \
 COPY . .
 
 RUN composer dump-autoload --optimize \
-    && mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache \
+    && mkdir -p storage/app/public\storage framework/{cache,sessions,views} storage/logs bootstrap/cache \
     && chown -R laravel:laravel /var/www/html \
     && chmod -R 775 storage bootstrap/cache
 

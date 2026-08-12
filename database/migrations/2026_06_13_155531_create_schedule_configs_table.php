@@ -16,7 +16,9 @@ return new class extends Migration
             $table->tinyInteger('break_duration')->default(0);
             $table->smallInteger('max_patients')->nullable();
             $table->boolean('buffer_enabled')->default(false);
-            $table->boolean('is_vacation_mode')->default(false);
+            $table->date('vacation_start_date')->nullable();
+            $table->date('vacation_end_date')->nullable();
+
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });

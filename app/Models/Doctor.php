@@ -53,11 +53,6 @@ class Doctor extends Model implements HasMedia
     }
 
 
-
-    /**
-     * [NEW] العيادات الفريدة التي ينتمي إليها الطبيب — مُشتقَّة من
-     * doctor_departments.clinic_id (قد يعمل بعدة عيادات).
-     */
     public function clinics(): BelongsToMany
     {
         return $this->belongsToMany(Clinic::class, 'doctor_departments')
