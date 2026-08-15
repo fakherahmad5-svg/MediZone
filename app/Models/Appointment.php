@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Core\Enums\AppointmentStatus;
+use App\Core\Enums\ConsultationType;
 use App\Models\Clinic;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
@@ -26,6 +28,14 @@ class Appointment extends Model
         'notes',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'status'          => AppointmentStatus::class,
+            'encounter_type'  => ConsultationType::class,
+            'price'           => 'float',
+        ];
+    }
     public function clinic(): BelongsTo
     {
         return $this->belongsTo(Clinic::class);
@@ -64,5 +74,37 @@ class Appointment extends Model
     public function invoice(): HasOne
     {
         return $this->hasOne(Invoice::class);
+    }
+
+    // ─── Status Helpers ───────────────────────────────────────────
+
+    public function isScheduled(): bool
+    {
+        return $this->status === AppointmentStatus::Scheduled;
+    }
+
+    public function isCheckedIn(): bool
+    {
+        return $this->status === AppointmentStatus::CheckedIn;
+    }
+
+    public function isInProgress(): bool
+    {
+        return $this->status === AppointmentStatus::InProgress;
+    }
+
+    public function isCompleted(): bool
+    {
+        return $this->status === AppointmentStatus::Completed;
+    }
+
+    public function isCancelled(): bool
+    {
+        return $this->status === AppointmentStatus::Cancelled;
+    }
+
+    public function isActive(): bool
+    {
+        return ! $this->status->isTerminal();
     }
 }

@@ -53,7 +53,6 @@ trait ApiResponse
     ): JsonResponse {
 
         $items = $paginator->items();
-
         if ($dataTransformer) {
             $items = array_map($dataTransformer, $items);
         }

@@ -4,10 +4,7 @@ namespace App\Modules\Doctors\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-/**
- * UpdateDoctorProfileRequest — UC-D01 (Manage Profile)
- * الطبيب يُحدِّث بياناته المهنية الخاصة بعد التسجيل.
- */
+
 class UpdateDoctorProfileRequest extends FormRequest
 {
     public function authorize(): bool

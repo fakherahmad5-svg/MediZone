@@ -34,4 +34,14 @@ class PatientRecord extends Model
     {
         return $this->hasMany(Encounter::class);
     }
+
+    public function hasMedicalData(): bool
+    {
+        return $this->medications()->exists()
+            || $this->attachments()->exists()
+            || $this->medicalHistory->allergies()->exists()
+            || $this->medicalHistory->chronicConditions()->exists()
+            || $this->medicalHistory->surgeries()->exists()
+            || $this->medicalHistory->familyHistories()->exists();
+    }
 }

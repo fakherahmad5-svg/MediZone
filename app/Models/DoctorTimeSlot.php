@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class DoctorTimeSlot extends Model
 {
+    protected $table = 'doctor_time_slots';
     protected $fillable = [
         'clinic_id',
         'doctor_id',
@@ -25,6 +26,7 @@ class DoctorTimeSlot extends Model
         return [
             'starts_at' => 'datetime',
             'ends_at'   => 'datetime',
+            'status'    => SlotStatus::class,
         ];
     }
 

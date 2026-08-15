@@ -29,6 +29,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             'message' => 'Authenticated. Server is running.',
         ]));
 
+        require base_path('app/Modules/Appointments/routes.php');
         // ── Users & Profiles ─────────────────────────────────────────
         // require base_path('app/Modules/Users/routes.php');
 

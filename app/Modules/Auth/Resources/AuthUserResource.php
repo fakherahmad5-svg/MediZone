@@ -95,6 +95,9 @@ class AuthUserResource extends BaseResource
             'patient_id' => $this->patient->id,
             'blood_type' => $this->patient->blood_type,
             'patient_record_id' => $recordId,
+            'has_medical_data' => $recordId !== null
+                ? $this->patient->patientRecord->hasMedicalData()
+                : false,
         ];
     }
 

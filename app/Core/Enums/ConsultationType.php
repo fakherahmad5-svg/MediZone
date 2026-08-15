@@ -10,7 +10,5 @@ enum ConsultationType: string
     use EnumValues;
 
     case Chat     = 'chat';
-    case Video    = 'video';
-    case Audio    = 'audio';
     case InPerson = 'in_person';
 }

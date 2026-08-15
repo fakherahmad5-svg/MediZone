@@ -43,6 +43,12 @@ class Clinic extends Model implements HasMedia
         return $this->hasMany(DoctorDepartment::class);
     }
 
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class);
+    }
+
+
     // ─── Status Helpers ───────────────────────────────────────────
 
     public function isPending(): bool

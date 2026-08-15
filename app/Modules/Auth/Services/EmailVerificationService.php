@@ -47,8 +47,12 @@ class EmailVerificationService extends BaseService
             ->where('expires_at', '>', now())
             ->latest('id')
             ->first();
-        if (! $record || ! hash_equals($record->code_hash, $this->hashCode($code))) {
-            throw new BusinessException('Invalid or expired verification code.');
+
+        if (! $record ) {
+            throw new BusinessException(' expired verification code.');
+        }
+        if(! hash_equals($record->code_hash, $this->hashCode($code))){
+            throw new BusinessException('Invalid  verification code.');
         }
 
         $record->update(['used_at' => now()]);

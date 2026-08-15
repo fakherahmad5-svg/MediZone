@@ -17,10 +17,6 @@ enum AccessAction: string
     case CreatePrescription = 'create_prescription';
     case ExportRecord       = 'export_record';
 
-    /**
-     * هل هذا الإجراء يتطلب AccessType::Full ؟
-     * يُستخدَم في AccessGuard Middleware (المرحلة 5)
-     */
     public function requiresFullAccess(): bool
     {
         return in_array($this, [
