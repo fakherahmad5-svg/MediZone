@@ -2,6 +2,8 @@
 
 namespace App\Modules\Appointments\Services;
 
+use App\Core\Enums\AccessStatus;
+use App\Core\Enums\AccessType;
 use App\Core\Enums\AppointmentStatus;
 use App\Core\Enums\ConsultationType;
 use App\Core\Exceptions\AuthorizationException;
@@ -12,6 +14,7 @@ use App\Models\Appointment;
 use App\Models\ClinicLog;
 use App\Models\Doctor;
 use App\Models\Patient;
+use App\Models\PatientDoctorAccess;
 use App\Models\User;
 use App\Modules\Scheduling\Services\DoctorTimeSlotService;
 
@@ -38,7 +41,7 @@ class AppointmentBookingService extends BaseService
             ]);
 
             $this->log($appointment, $patientUser, 'appointment_booked');
-
+            $this->grantInitialAccess($appointment);
             return $appointment->fresh(['clinic', 'doctor.user', 'slot']);
         });
     }
@@ -68,7 +71,7 @@ class AppointmentBookingService extends BaseService
             ]);
 
             $this->log($appointment, $receptionistUser, 'appointment_booked_on_behalf');
-
+            $this->grantInitialAccess($appointment);
             return $appointment->fresh(['clinic', 'doctor.user', 'patient.user', 'slot']);
         });
     }
@@ -106,7 +109,7 @@ class AppointmentBookingService extends BaseService
             ]);
 
             $this->log($appointment, $receptionistUser, 'walk_in_appointment_created');
-
+            $this->grantInitialAccess($appointment);
             return $appointment->fresh(['clinic', 'doctor.user', 'patient.user']);
         });
     }
@@ -150,6 +153,21 @@ class AppointmentBookingService extends BaseService
     }
 
     // ─────────────────────────────────────────────────────────────
+
+
+    private function grantInitialAccess(Appointment $appointment): void
+    {
+        PatientDoctorAccess::create([
+            'patient_id'     => $appointment->patient_id,
+            'doctor_id'      => $appointment->doctor_id,
+            'appointment_id' => $appointment->id,
+            'access_type'    => $appointment->status === AppointmentStatus::CheckedIn
+                ? AccessType::Full->value
+                : AccessType::ReadOnly->value,
+            'status'      => AccessStatus::Active->value,
+            'granted_at'  => now(),
+        ]);
+    }
 
     private function patientFor(User $user): Patient
     {
