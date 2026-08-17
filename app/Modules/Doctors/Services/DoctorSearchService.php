@@ -18,6 +18,7 @@ class DoctorSearchService
             ->with(['user:id,first_name,last_name', 'profile', 'departments', 'clinics'])
             ->where('verification_status', DoctorVerificationStatus::Verified->value)
             ->whereHas('clinics', fn ($q) => $q->where('status', ClinicStatus::Active->value))
+            ->whereHas('scheduleConfigs', fn ($q) => $q->where('is_active', true))
 
             ->when(
                 ! empty($filters['department_id']),
@@ -47,7 +48,6 @@ class DoctorSearchService
                 )
             )
 
-            ->orderByDesc('avg_rating')
             ->paginate($perPage);
     }
 

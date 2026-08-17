@@ -22,6 +22,7 @@ class UserRoleService
             'clinicUsers.clinic:id,name',
             'patient.patientRecord',
             'doctor.departments:id,name',
+            'doctor.clinics',
             'receptionist',
         ]);
     }

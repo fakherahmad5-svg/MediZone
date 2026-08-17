@@ -44,7 +44,8 @@ class Doctor extends Model implements HasMedia
     {
         return $this->belongsToMany(Department::class, 'doctor_departments')
             ->withPivot(['clinic_id', 'is_primary'])
-            ->withTimestamps();
+            ->withTimestamps()
+            ->distinct();
     }
 
     public function doctorDepartments(): HasMany
@@ -55,11 +56,15 @@ class Doctor extends Model implements HasMedia
 
     public function clinics(): BelongsToMany
     {
-        return $this->belongsToMany(Clinic::class, 'doctor_departments')
-            ->select('clinics.*')
-            ->distinct();
+        return $this->belongsToMany(Clinic::class, 'doctor_clinics')
+            ->withPivot(['consultation_fee'])
+            ->withTimestamps();
     }
 
+    public function doctorClinics(): HasMany
+    {
+        return $this->hasMany(DoctorClinic::class);
+    }
 
     public function appointments(): HasMany
     {

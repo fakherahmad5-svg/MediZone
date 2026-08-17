@@ -12,8 +12,6 @@ return new class extends Migration
         Schema::create('receptionists', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->enum('status', ReceptionistsStatus::values())->default(ReceptionistsStatus::Pending->value);
-
             $table->timestamps();
         });
     }

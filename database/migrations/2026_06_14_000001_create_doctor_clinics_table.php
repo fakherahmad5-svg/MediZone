@@ -8,19 +8,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('doctor_profiles', function (Blueprint $table) {
+        Schema::create('doctor_clinics', function (Blueprint $table) {
             $table->id();
             $table->foreignId('doctor_id')->constrained('doctors')->cascadeOnDelete();
-            $table->text('biography')->nullable();
-            $table->json('qualifications')->nullable();
-            $table->decimal('online_consultation_fee', 10, 2)->nullable();
+            $table->foreignId('clinic_id')->constrained('clinics')->cascadeOnDelete();
+            $table->decimal('consultation_fee', 10, 2)->nullable();
             $table->timestamps();
-            $table->json('languages')->nullable();
+
+            $table->unique(['doctor_id', 'clinic_id']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('doctor_profiles');
+        Schema::dropIfExists('doctor_clinics');
     }
 };

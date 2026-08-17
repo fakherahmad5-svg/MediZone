@@ -4,15 +4,16 @@ namespace App\Modules\Auth\Services;
 
 use App\Core\Enums\ClinicStatus;
 use App\Core\Enums\DoctorVerificationStatus;
-use App\Core\Enums\ReceptionistsStatus;
 use App\Core\Enums\UserRole;
 use App\Core\Enums\UserStatus;
 use App\Core\Exceptions\BusinessException;
 use App\Core\Exceptions\ConflictException;
+use App\Core\Exceptions\NotFoundException;
 use App\Core\Services\BaseService;
 use App\Models\Clinic;
 use App\Models\ClinicUser;
 use App\Models\Doctor;
+use App\Models\DoctorClinic;
 use App\Models\MedicalHistory;
 use App\Models\Patient;
 use App\Models\PatientRecord;
@@ -35,7 +36,17 @@ class RegistrationService extends BaseService
 
         $user = $this->createUserRecord($data,$role);
 
-        $this->attachRole($user, $role, clinicId: $data['clinic_id'] ?? null);
+        if ($data['clinic_code']??null) {
+            $clinic = Clinic::where('code', $data['clinic_code'])->first();
+
+            if (! $clinic) {
+                throw new NotFoundException('Clinic not found.');
+            }
+
+            $clinicId = $clinic->id;
+        }
+
+        $this->attachRole($user, $role, clinicId: $clinicId ?? null);
         return $user;
     }
 
@@ -105,9 +116,17 @@ class RegistrationService extends BaseService
 
     private function completeDoctorProfile(User $user, array $data): void
     {
-        $clinicId = $data['registration_mode'] === 'create_clinic'
-            ? $this->createClinicForDoctor($user, $data)
-            : $data['clinic_id'];
+        if ($data['registration_mode'] === 'join_clinic') {
+            $clinic = Clinic::where('code', $data['clinic_code'])->first();
+
+            if (! $clinic) {
+                throw new NotFoundException('Clinic not found.');
+            }
+
+            $clinicId = $clinic->id;
+        } else {
+            $clinicId = $this->createClinicForDoctor($user, $data);
+        }
 
         $departmentIds = $data['department_ids'];
 
@@ -159,6 +178,12 @@ class RegistrationService extends BaseService
 
         DB::table('doctor_departments')->insert($doctorDepartmentRows);
 
+        DoctorClinic::query()->create([
+            'doctor_id'        => $doctor->id,
+            'clinic_id'        => $clinicId,
+            'consultation_fee' => $data['consultation_fee'] ?? null,
+        ]);
+
         $user->clinicUsers()->update(['clinic_id' => $clinicId]);
     }
 
@@ -169,6 +194,8 @@ class RegistrationService extends BaseService
             'address' => $data['clinic_address'],
             'phone' => $data['clinic_phone'] ?? null,
             'owner_id' => $user->id,
+            'latitude' => $data['latitude'] ?? null,
+            'longitude' => $data['longitude'] ?? null,
             'status' => ClinicStatus::Pending->value,
         ]);
 
@@ -191,7 +218,6 @@ class RegistrationService extends BaseService
     {
         Receptionist::query()->create([
             'user_id' => $user->id,
-            'status' => ReceptionistsStatus::Pending->value,
         ]);
     }
 

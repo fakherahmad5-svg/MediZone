@@ -165,21 +165,6 @@ class AuthService extends BaseService
                 throw new BusinessException($messages[$status]);
             }
         }
-        if ($user->receptionist) {
-            $messages = [
-                ReceptionistsStatus::Pending->value => 'Your account is pending administrator verification.',
-                ReceptionistsStatus::Rejected->value => 'Your verification was rejected. Please contact support.',
-                ReceptionistsStatus::Suspended->value => 'Your account has been suspended.',
-            ];
-
-            $status = $user->receptionist->status instanceof ReceptionistsStatus
-                ? $user->receptionist->status->value
-                : $user->receptionist->status;
-
-            if (isset($messages[$status])) {
-                throw new BusinessException($messages[$status]);
-            }
-        }
     }
 
     private function loginResult(User $user, string $deviceName): AuthResult
@@ -261,7 +246,7 @@ class AuthService extends BaseService
 
             $role = $this->roles->getRole($user);
 
-            if ($role === UserRole::Doctor->value || $role === UserRole::Receptionist->value ) {
+            if ($role === UserRole::Doctor->value ) {
                 $user->tokens()->delete();
                 return new AuthResult(user: $user, pendingApproval: true);
             }

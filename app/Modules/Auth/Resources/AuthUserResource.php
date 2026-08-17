@@ -56,6 +56,26 @@ class AuthUserResource extends BaseResource
         return empty($list) ? null : $list;
     }
 
+    /** @return array<int, array<string, mixed>>|null */
+    private function doctorClinicsList(): ?array
+    {
+        if (! $this->doctor->relationLoaded('clinics')) {
+            return null;
+        }
+
+        $list = [];
+
+        foreach ($this->doctor->clinics as $clinic) {
+            $list[] = [
+                'clinic_id' => $clinic->id,
+                'clinic_name' => $clinic->name,
+                'consultation_fee' => $clinic->pivot->consultation_fee,
+            ];
+        }
+
+        return empty($list) ? null : $list;
+    }
+
     /** @return array<string, mixed>|null */
     private function profileByRole(?string $role): ?array
     {
@@ -127,7 +147,7 @@ class AuthUserResource extends BaseResource
             'experience_years' => $this->doctor->experience_years,
             'verification_status' => $this->doctor->verification_status,
             'departments' => $departments,
-            'clinics' => $this->clinicsList(),
+            'clinics' => $this->doctorClinicsList(),
         ];
     }
 
@@ -140,7 +160,7 @@ class AuthUserResource extends BaseResource
 
         return [
             'receptionist_id' => $this->receptionist->id,
-            'status' => $this->receptionist->status,
+            'clinic'=> $this->clinicsList()
         ];
     }
 }

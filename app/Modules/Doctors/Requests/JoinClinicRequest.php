@@ -2,6 +2,7 @@
 
 namespace App\Modules\Doctors\Requests;
 
+use App\Models\Clinic;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -14,24 +15,21 @@ class JoinClinicRequest extends FormRequest
 
     public function rules(): array
     {
-        $ownedDepartmentIds = $this->user()->doctor
-            ?->departments()
-            ->pluck('departments.id')
-            ->unique()
-            ->values()
-            ->all() ?? [];
+
 
         return [
-            'clinic_id'        => ['required', 'integer', 'exists:clinics,id'],
-            'department_ids'   => ['required', 'array', 'min:1'],
-            'department_ids.*' => ['integer', 'distinct', Rule::in($ownedDepartmentIds)],
+            'clinic_code' => [
+                'bail', 'required', 'string', 'size:10',
+                function ($attribute, $value, $fail) {
+                    if (! Clinic::isValidCodeFormat($value)) {
+                        $fail('Invalid clinic code format.');
+                    }
+                },
+                'exists:clinics,code',
+            ],
+            'consultation_fee' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
         ];
     }
 
-    public function messages(): array
-    {
-        return [
-            'department_ids.*.in' => 'You can only select from your own registered specialties.',
-        ];
-    }
+
 }

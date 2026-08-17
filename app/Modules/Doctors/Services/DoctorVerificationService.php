@@ -67,7 +67,7 @@ class DoctorVerificationService extends BaseService
 
             $this->writeAudit($admin, $doctor, 'doctor_verified');
 
-            return $doctor->fresh();
+            return $doctor->fresh(['user','profile', 'departments', 'clinics']);
         });
     }
 
@@ -83,7 +83,7 @@ class DoctorVerificationService extends BaseService
 
             $this->writeAudit($admin, $doctor, 'doctor_rejected', ['reason' => $reason]);
 
-            return $doctor->fresh();
+            return $doctor->fresh(['user','profile', 'departments', 'clinics']);
         });
     }
 
@@ -100,7 +100,7 @@ class DoctorVerificationService extends BaseService
 
             $this->writeAudit($admin, $doctor, 'doctor_suspended', ['reason' => $reason]);
 
-            return $doctor->fresh();
+            return $doctor->fresh(['user','profile', 'departments', 'clinics']);
         });
     }
 
@@ -117,7 +117,7 @@ class DoctorVerificationService extends BaseService
 
             $this->writeAudit($admin, $doctor, 'doctor_reactivated');
 
-            return $doctor->fresh();
+            return $doctor->fresh(['user','profile', 'departments', 'clinics']);
         });
     }
 

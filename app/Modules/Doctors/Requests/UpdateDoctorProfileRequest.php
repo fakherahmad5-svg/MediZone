@@ -28,7 +28,7 @@ class UpdateDoctorProfileRequest extends FormRequest
             'qualifications.*.degree'      => ['required_with:qualifications', 'string', 'max:150'],
             'qualifications.*.institution' => ['required_with:qualifications', 'string', 'max:150'],
             'qualifications.*.year'        => ['required_with:qualifications', 'integer', 'min:1950'],
-            'consultation_fee'     => ['sometimes', 'numeric', 'min:0'],
+            'online_consultation_fee'     => ['sometimes', 'numeric', 'min:0'],
             'languages'            => ['sometimes', 'array'],
             'languages.*'          => ['string', 'max:50'],
         ];

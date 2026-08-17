@@ -38,10 +38,16 @@ class DoctorAdminResource extends BaseResource
             'profile' => $this->whenLoaded('profile', fn () => [
                 'biography'        => $this->profile?->biography,
                 'qualifications'   => $this->profile?->qualifications,
-                'consultation_fee' => $this->profile?->consultation_fee,
+                'online_consultation_fee' => $this->profile?->online_consultation_fee,
             ]),
 
             'departments' => DepartmentResource::collection($this->whenLoaded('departments')),
+
+            'clinics' => $this->whenLoaded('clinics', fn () => $this->clinics->map(fn ($clinic) => [
+                'id'                => $clinic->id,
+                'name'              => $clinic->name,
+                'consultation_fee'  => $clinic->pivot->consultation_fee,
+            ])),
 
             'created_at' => $this->formatDate($this->created_at),
         ];

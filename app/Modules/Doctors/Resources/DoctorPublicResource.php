@@ -18,11 +18,14 @@ class DoctorPublicResource extends BaseResource
 
             'biography'        => $this->whenLoaded('profile', $this->profile?->biography),
             'qualifications'   => $this->whenLoaded('profile', $this->profile?->qualifications),
-            'consultation_fee' => $this->whenLoaded('profile', $this->profile?->consultation_fee),
+            'online_consultation_fee' => $this->whenLoaded('profile', $this->profile?->online_consultation_fee),
             'languages'        => $this->whenLoaded('profile', $this->profile?->languages),
 
             'departments' => DepartmentResource::collection($this->whenLoaded('departments')),
-            'clinics'     => ClinicResource::collection($this->whenLoaded('clinics')),
+            'clinics'     => $this->whenLoaded('clinics', fn () => $this->clinics->map(fn ($clinic) => [
+                ...(new ClinicResource($clinic))->resolve(),
+                'consultation_fee' => $clinic->pivot->consultation_fee,
+            ])),
         ];
     }
 }

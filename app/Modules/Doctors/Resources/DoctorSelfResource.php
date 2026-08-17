@@ -48,13 +48,16 @@ class DoctorSelfResource extends BaseResource
 
             'profile' => $this->whenLoaded('profile', fn () => [
                 'biography'        => $this->profile?->biography,
-                'consultation_fee' => $this->profile?->consultation_fee,
+                'online_consultation_fee' => $this->profile?->online_consultation_fee,
                 'languages'        => $this->profile?->languages,
                 'qualifications'   => $this->profile?->qualifications,
             ]),
 
-            'departments' => DepartmentResource::collection($this->whenLoaded('departments')),
-            'clinics'     => ClinicResource::collection($this->whenLoaded('clinics')),
+            'departments' => DepartmentResource::collection($this->whenLoaded('departments')->unique('name')),
+            'clinics'     => $this->whenLoaded('clinics', fn () => $this->clinics->map(fn ($clinic) => [
+                ...(new ClinicResource($clinic))->resolve(),
+                'consultation_fee' => $clinic->pivot->consultation_fee,
+            ])),
         ];
     }
 }

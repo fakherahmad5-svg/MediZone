@@ -20,6 +20,7 @@ Route::middleware(['auth:sanctum', 'role:doctor'])
         Route::put('/', [DoctorProfileController::class, 'update'])->name('update');
         Route::post('/photo', [DoctorProfileController::class, 'uploadPhoto'])->name('photo');
         Route::post('/certificates', [DoctorProfileController::class, 'uploadCertificate'])->name('certificates');
+        Route::put('/clinics/{clinic}/fee', [DoctorProfileController::class, 'updateConsultationFee'])->name('clinics.fee');
         Route::post('/clinics/join', [DoctorProfileController::class, 'joinClinic'])->name('clinics.join');
         Route::post('/clinics/create', [DoctorProfileController::class, 'createClinic'])->name('clinics.create');
         Route::post('/departments/leave', [DoctorProfileController::class, 'leaveDepartment'])->name('departments.leave');

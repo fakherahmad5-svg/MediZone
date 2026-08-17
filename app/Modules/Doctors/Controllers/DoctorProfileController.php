@@ -4,7 +4,9 @@ namespace App\Modules\Doctors\Controllers;
 
 use App\Core\Http\Controllers\BaseController;
 use App\Modules\Doctors\Requests\CreateClinicRequest;
+use App\Modules\Doctors\Requests\JoinClinicRequest;
 use App\Modules\Doctors\Requests\LeaveDepartmentRequest;
+use App\Modules\Doctors\Requests\UpdateConsultationFeeRequest;
 use App\Modules\Doctors\Requests\UpdateDoctorProfileRequest;
 use App\Modules\Doctors\Requests\UploadDoctorCertificateRequest;
 use App\Modules\Doctors\Requests\UploadDoctorPhotoRequest;
@@ -52,6 +54,18 @@ class DoctorProfileController extends BaseController
         );
     }
 
+    public function updateConsultationFee(UpdateConsultationFeeRequest $request, int $clinic): JsonResponse
+    {
+        $doctor = $this->profiles->forUser($request->user());
+
+        $this->profiles->updateConsultationFee($doctor, $clinic, (float) $request->validated('consultation_fee'));
+
+        return $this->successResponse(
+            new DoctorSelfResource($doctor->fresh(['user', 'profile', 'departments', 'clinics'])),
+            'Consultation fee updated successfully.'
+        );
+    }
+
     public function uploadCertificate(UploadDoctorCertificateRequest $request): JsonResponse
     {
         $doctor = $this->profiles->forUser($request->user());
@@ -69,7 +83,7 @@ class DoctorProfileController extends BaseController
         $doctor = $this->profiles->forUser($request->user());
         $data   = $request->validated();
 
-        $this->profiles->joinClinic($doctor, $data['clinic_id'], $data['department_ids']);
+        $this->profiles->joinClinic($doctor, $data['clinic_code'], (float) $data['consultation_fee']);
 
         return $this->successResponse(
             new DoctorSelfResource($doctor->fresh(['profile', 'departments', 'clinics'])),
@@ -80,8 +94,8 @@ class DoctorProfileController extends BaseController
     public function createClinic(CreateClinicRequest $request): JsonResponse
     {
         $doctor = $this->profiles->forUser($request->user());
-
-        $this->profiles->createClinic($doctor, $request->validated());
+        $data   = $request->validated();
+        $this->profiles->createClinic($doctor, $data, (float) $data['consultation_fee']);
 
         return $this->successResponse(
             new DoctorSelfResource($doctor->fresh(['user', 'profile', 'departments', 'clinics'])),
