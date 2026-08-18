@@ -3,6 +3,7 @@
 use App\Modules\Medical\Controllers\AllergyController;
 use App\Modules\Medical\Controllers\AttachmentController;
 use App\Modules\Medical\Controllers\ChronicConditionController;
+use App\Modules\Medical\Controllers\DoctorMedicalRecordController;
 use App\Modules\Medical\Controllers\FamilyHistoryController;
 use App\Modules\Medical\Controllers\MedicalRecordController;
 use App\Modules\Medical\Controllers\MedicationController;
@@ -68,4 +69,11 @@ Route::middleware(['auth:sanctum', 'role:patient'])
             Route::get('/{id}/download', [AttachmentController::class, 'download'])->name('download');
             Route::delete('/{id}', [AttachmentController::class, 'destroy'])->name('destroy');
         });
+    });
+Route::middleware(['auth:sanctum', 'role:doctor'])
+    ->prefix('doctor/appointments')
+    ->name('doctor.appointments.')
+    ->group(function () {
+        Route::get('/{appointmentId}/medical-record', [DoctorMedicalRecordController::class, 'show'])
+            ->name('medical-record');
     });

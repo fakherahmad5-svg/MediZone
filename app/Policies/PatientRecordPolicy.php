@@ -9,7 +9,15 @@ class PatientRecordPolicy
 {
     public function view(User $user, PatientRecord $record): bool
     {
-        return $this->isOwner($user, $record);
+        if ($this->isOwner($user, $record)) {
+            return true;
+        }
+
+        if ($user->doctor) {
+            return app(AccessGuard::class)->levelFor($user->doctor, $record->patient) !== null;
+        }
+
+        return false;
     }
 
     public function update(User $user, PatientRecord $record): bool

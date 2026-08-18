@@ -25,7 +25,6 @@ class DepartmentSeeder extends Seeder
                 ['name' => 'Dentistry',         'description' => 'طب الأسنان'],
                 ['name' => 'General Surgery',   'description' => 'الجراحة العامة'],
                 ['name' => 'Orthopedics', 'description' => 'Bone, joint, and muscle care'],
-                ['name' => 'General Medicine', 'description' => 'Primary and general care'],
                 ['name' => 'Internal Medicine', 'description' => 'Adult internal medicine'],
 
         ];

@@ -28,7 +28,7 @@ class DoctorProfile extends Model
         return [
             'qualifications'   => 'array',
             'languages'        => 'array',
-            'consultation_fee' => 'float',
+            'online_consultation_fee' => 'float',
         ];
     }
 

@@ -43,6 +43,8 @@ class ScheduleConfigService extends BaseService
     public function setWeeklySchedule(Doctor $doctor, Clinic $clinic, array $data): ScheduleConfig
     {
         return $this->transaction(function () use ($doctor, $clinic, $data) {
+            $this->assertNoScheduleConflict($doctor, $clinic, $data['days']);
+
             $config = ScheduleConfig::updateOrCreate(
                 ['doctor_id' => $doctor->id, 'clinic_id' => $clinic->id],
                 [
@@ -113,7 +115,56 @@ class ScheduleConfigService extends BaseService
         return $config->fresh();
     }
 
-    // ─────────────────────────────────────────────────────────────
+
+    private function assertNoScheduleConflict(Doctor $doctor, Clinic $clinic, array $days): void
+    {
+        $otherConfigs = ScheduleConfig::where('doctor_id', $doctor->id)
+            ->where('clinic_id', '!=', $clinic->id)
+            ->with('days.sessions')
+            ->get();
+
+        if ($otherConfigs->isEmpty()) {
+            return;
+        }
+
+        foreach ($days as $dayPayload) {
+            $dayOfWeek = $dayPayload['day_of_week'];
+
+            foreach ($dayPayload['sessions'] as $sessionPayload) {
+                $newStart = Carbon::parse($sessionPayload['start_time']);
+                $newEnd   = Carbon::parse($sessionPayload['end_time']);
+
+                foreach ($otherConfigs as $otherConfig) {
+                    foreach ($otherConfig->days as $otherDay) {
+                        if ($otherDay->day_of_week !== $dayOfWeek || ! $otherDay->is_active) {
+                            continue;
+                        }
+
+                        foreach ($otherDay->sessions as $otherSession) {
+                            if (! $otherSession->is_active) {
+                                continue;
+                            }
+
+                            $existingStart = Carbon::parse($otherSession->start_time);
+                            $existingEnd   = Carbon::parse($otherSession->end_time);
+
+                            $overlaps = $newStart->lt($existingEnd) && $newEnd->gt($existingStart);
+
+                            if ($overlaps) {
+                                throw new BusinessException(sprintf(
+                                    'Schedule conflict: doctor already has a session at another clinic (clinic_id: %d) on day %s from %s to %s.',
+                                    $otherConfig->clinic_id,
+                                    $dayOfWeek,
+                                    $existingStart->format('H:i'),
+                                    $existingEnd->format('H:i')
+                                ));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     private function blockAvailableSlotsInRange(ScheduleConfig $config,  $from,  $to): int
     {

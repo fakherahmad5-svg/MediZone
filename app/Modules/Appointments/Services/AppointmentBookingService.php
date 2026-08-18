@@ -2,6 +2,8 @@
 
 namespace App\Modules\Appointments\Services;
 
+use App\Core\Enums\AccessStatus;
+use App\Core\Enums\AccessType;
 use App\Core\Enums\AppointmentStatus;
 use App\Core\Enums\ConsultationType;
 use App\Core\Exceptions\AuthorizationException;
@@ -11,7 +13,9 @@ use App\Core\Services\BaseService;
 use App\Models\Appointment;
 use App\Models\ClinicLog;
 use App\Models\Doctor;
+use App\Models\DoctorClinic;
 use App\Models\Patient;
+use App\Models\PatientDoctorAccess;
 use App\Models\User;
 use App\Modules\Scheduling\Services\DoctorTimeSlotService;
 
@@ -32,13 +36,13 @@ class AppointmentBookingService extends BaseService
                 'slot_id'        => $slot->id,
                 'status'         => AppointmentStatus::Scheduled->value,
                 'encounter_type' => $type->value,
-                'price'          => $this->resolvePrice($slot->doctor_id),
+                'price'          => $this->resolvePrice($slot->doctor_id,$slot->clinic_id),
                 'created_by'     => $patientUser->id,
                 'notes'          => $notes,
             ]);
 
             $this->log($appointment, $patientUser, 'appointment_booked');
-
+            $this->grantInitialAccess($appointment);
             return $appointment->fresh(['clinic', 'doctor.user', 'slot']);
         });
     }
@@ -62,13 +66,13 @@ class AppointmentBookingService extends BaseService
                 'slot_id'        => $slot->id,
                 'status'         => AppointmentStatus::Scheduled->value,
                 'encounter_type' => $type->value,
-                'price'          => $this->resolvePrice($slot->doctor_id),
+                'price'          => $this->resolvePrice($slot->doctor_id,$slot->clinic_id),
                 'created_by'     => $receptionistUser->id,
                 'notes'          => $notes,
             ]);
 
             $this->log($appointment, $receptionistUser, 'appointment_booked_on_behalf');
-
+            $this->grantInitialAccess($appointment);
             return $appointment->fresh(['clinic', 'doctor.user', 'patient.user', 'slot']);
         });
     }
@@ -100,13 +104,13 @@ class AppointmentBookingService extends BaseService
                 'slot_id'        => null,
                 'status'         => AppointmentStatus::CheckedIn->value,
                 'encounter_type' => $type->value,
-                'price'          => $this->resolvePrice($doctor->id),
+                'price'          => $this->resolvePrice($doctor->id,$clinicId),
                 'created_by'     => $receptionistUser->id,
                 'notes'          => $notes,
             ]);
 
             $this->log($appointment, $receptionistUser, 'walk_in_appointment_created');
-
+            $this->grantInitialAccess($appointment);
             return $appointment->fresh(['clinic', 'doctor.user', 'patient.user']);
         });
     }
@@ -151,6 +155,21 @@ class AppointmentBookingService extends BaseService
 
     // ─────────────────────────────────────────────────────────────
 
+
+    private function grantInitialAccess(Appointment $appointment): void
+    {
+        PatientDoctorAccess::create([
+            'patient_id'     => $appointment->patient_id,
+            'doctor_id'      => $appointment->doctor_id,
+            'appointment_id' => $appointment->id,
+            'access_type'    => $appointment->status === AppointmentStatus::CheckedIn
+                ? AccessType::Full->value
+                : AccessType::ReadOnly->value,
+            'status'      => AccessStatus::Active->value,
+            'granted_at'  => now(),
+        ]);
+    }
+
     private function patientFor(User $user): Patient
     {
         $patient = $user->patient;
@@ -163,11 +182,14 @@ class AppointmentBookingService extends BaseService
     }
 
 
-    private function resolvePrice(int $doctorId): float
+    private function resolvePrice(int $doctorId, int $clinicId): float
     {
-        $doctor = Doctor::with('profile')->find($doctorId);
+        $consultationFee = DoctorClinic::query()
+            ->where('doctor_id', $doctorId)
+            ->where('clinic_id', $clinicId)
+            ->value('consultation_fee');
 
-        return (float) ($doctor?->profile?->consultation_fee ?? 0);
+        return (float) ($consultationFee ?? 0);
     }
 
     private function log(Appointment $appointment, User $actor, string $action): void

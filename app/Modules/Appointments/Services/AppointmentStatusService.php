@@ -2,12 +2,14 @@
 
 namespace App\Modules\Appointments\Services;
 
+use App\Core\Enums\AccessStatus;
 use App\Core\Enums\AppointmentStatus;
 use App\Core\Exceptions\AuthorizationException;
 use App\Core\Exceptions\BusinessException;
 use App\Core\Services\BaseService;
 use App\Models\Appointment;
 use App\Models\ClinicLog;
+use App\Models\PatientDoctorAccess;
 use App\Models\User;
 use App\Modules\Scheduling\Services\DoctorTimeSlotService;
 
@@ -63,7 +65,7 @@ class AppointmentStatusService extends BaseService
             if ($appointment->slot_id) {
                 app(DoctorTimeSlotService::class)->release($appointment->slot_id);
             }
-
+            $this->closeAccess($appointment, AccessStatus::Revoked, $actor);
             $this->log($appointment, $actor, 'appointment_cancelled', $reason);
 
             return $appointment->fresh();
@@ -82,7 +84,7 @@ class AppointmentStatusService extends BaseService
             if ($appointment->slot_id) {
                 app(DoctorTimeSlotService::class)->release($appointment->slot_id);
             }
-
+            $this->closeAccess($appointment, AccessStatus::Revoked, $actor);
             $this->log($appointment, $actor, 'appointment_no_show');
 
             return $appointment->fresh();
@@ -104,7 +106,17 @@ class AppointmentStatusService extends BaseService
         });
     }
 
-
+    private function closeAccess(Appointment $appointment, AccessStatus $newStatus, ?User $actor): void
+    {
+        PatientDoctorAccess::where('appointment_id', $appointment->id)
+            ->where('status', AccessStatus::Active->value)
+            ->update(array_filter([
+                'status'        => $newStatus->value,
+                'revoked_at'    => $newStatus === AccessStatus::Revoked ? now() : null,
+                'revoked_by'    => $newStatus === AccessStatus::Revoked ? $actor?->id : null,
+                'revoke_reason' => $newStatus === AccessStatus::Revoked ? "appointment_{$appointment->status->value}" : null,
+            ], fn ($v) => $v !== null));
+    }
     private function ensureTransition(Appointment $appointment, AppointmentStatus $requiredCurrent, AppointmentStatus $target): void
     {
         if ($appointment->status !== $requiredCurrent) {

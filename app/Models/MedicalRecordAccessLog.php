@@ -3,6 +3,7 @@
 
 namespace App\Models;
 
+use App\Core\Enums\AccessAction;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -19,7 +20,10 @@ class MedicalRecordAccessLog extends Model
 
     protected function casts(): array
     {
-        return ['accessed_at' => 'datetime'];
+        return [
+            'action'      => AccessAction::class,
+            'accessed_at' => 'datetime'
+        ];
     }
 
     public function access(): BelongsTo

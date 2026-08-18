@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Core\Enums\AccessStatus;
+use App\Core\Enums\AccessType;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,11 +11,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PatientDoctorAccess extends Model
 {
+    protected $table = 'patient_doctor_access';
     protected $fillable = [
         'patient_id',
         'doctor_id',
         'granted_by',
         'access_type',
+        'appointment_id',
         'status',
         'expires_at',
         'granted_at',
@@ -26,6 +30,8 @@ class PatientDoctorAccess extends Model
     protected function casts(): array
     {
         return [
+            'access_type' => AccessType::class,
+            'status'      => AccessStatus::class,
             'expires_at'  => 'datetime',
             'granted_at'  => 'datetime',
             'revoked_at'  => 'datetime',
@@ -55,5 +61,9 @@ class PatientDoctorAccess extends Model
     public function accessLogs(): HasMany
     {
         return $this->hasMany(MedicalRecordAccessLog::class, 'access_id');
+    }
+    public function appointment(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Appointment::class);
     }
 }
