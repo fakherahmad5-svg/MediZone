@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PatientDoctorAccess extends Model
 {
+    protected $table = 'patient_doctor_access';
     protected $fillable = [
         'patient_id',
         'doctor_id',

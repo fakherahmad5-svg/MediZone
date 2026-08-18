@@ -14,25 +14,7 @@ use App\Modules\Access\Resources\PatientDoctorAccessResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-/**
- * PatientAccessController
- *
- * مكان الملف: app/Modules/Access/Controllers/PatientAccessController.php
- * الحالة: [NEW - Phase 7]
- *
- * ⚠️ هذا **ليس** حظراً دائماً لطبيب (لا يمنع حجوزات مستقبلية). هو
- * سحب وصول عن مواعيد **حالية نشطة** فقط — القرار المُتَّفق عليه
- * صراحة. أي حجز جديد لاحقاً مع نفس الطبيب يُنشئ صف وصول جديد
- * status=active من الصفر، غير متأثر بأي سحب سابق.
- *
- * محمي بصلاحية manage_own_access_grants (Phase 1، أُعيد استخدامها —
- * الاسم يطابق الوظيفة الفعلية الآن تماماً).
- *
- * Routes [auth:sanctum, role:patient]:
- *   GET  /patient/access                          → index()            — قائمة الوصول النشط حالياً (شفافية)
- *   POST /patient/access/appointments/{id}/revoke  → revokeAppointment() — سحب عن موعد محدَّد
- *   POST /patient/access/doctors/{id}/revoke        → revokeDoctor()      — سحب عن كل المواعيد النشطة مع طبيب
- */
+
 class PatientAccessController extends BaseController
 {
     public function index(Request $request): JsonResponse
@@ -111,7 +93,7 @@ class PatientAccessController extends BaseController
 
     private function ensurePermission(Request $request): void
     {
-        if (! $request->user()->hasPermission('manage_own_access_grants')) {
+        if (! $request->user()->hasPermission('access.revoke')) {
             throw new AuthorizationException('You are not authorized to manage access grants.');
         }
     }

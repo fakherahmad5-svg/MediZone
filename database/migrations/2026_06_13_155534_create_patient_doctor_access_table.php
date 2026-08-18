@@ -14,7 +14,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('patient_id')->constrained('patients')->cascadeOnDelete();
             $table->foreignId('doctor_id')->constrained('doctors')->cascadeOnDelete();
-
+            $table->foreignId('appointment_id')->nullable()->unique()->constrained('appointments')->cascadeOnDelete();
             $table->enum('access_type', AccessType::values());
             $table->enum('status', AccessStatus::values())->default(AccessStatus::Active->value);
 

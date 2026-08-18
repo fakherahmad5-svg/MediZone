@@ -13,6 +13,7 @@ use App\Core\Services\BaseService;
 use App\Models\Appointment;
 use App\Models\ClinicLog;
 use App\Models\Doctor;
+use App\Models\DoctorClinic;
 use App\Models\Patient;
 use App\Models\PatientDoctorAccess;
 use App\Models\User;
@@ -35,7 +36,7 @@ class AppointmentBookingService extends BaseService
                 'slot_id'        => $slot->id,
                 'status'         => AppointmentStatus::Scheduled->value,
                 'encounter_type' => $type->value,
-                'price'          => $this->resolvePrice($slot->doctor_id),
+                'price'          => $this->resolvePrice($slot->doctor_id,$slot->clinic_id),
                 'created_by'     => $patientUser->id,
                 'notes'          => $notes,
             ]);
@@ -65,7 +66,7 @@ class AppointmentBookingService extends BaseService
                 'slot_id'        => $slot->id,
                 'status'         => AppointmentStatus::Scheduled->value,
                 'encounter_type' => $type->value,
-                'price'          => $this->resolvePrice($slot->doctor_id),
+                'price'          => $this->resolvePrice($slot->doctor_id,$slot->clinic_id),
                 'created_by'     => $receptionistUser->id,
                 'notes'          => $notes,
             ]);
@@ -103,7 +104,7 @@ class AppointmentBookingService extends BaseService
                 'slot_id'        => null,
                 'status'         => AppointmentStatus::CheckedIn->value,
                 'encounter_type' => $type->value,
-                'price'          => $this->resolvePrice($doctor->id),
+                'price'          => $this->resolvePrice($doctor->id,$clinicId),
                 'created_by'     => $receptionistUser->id,
                 'notes'          => $notes,
             ]);
@@ -181,11 +182,14 @@ class AppointmentBookingService extends BaseService
     }
 
 
-    private function resolvePrice(int $doctorId): float
+    private function resolvePrice(int $doctorId, int $clinicId): float
     {
-        $doctor = Doctor::with('profile')->find($doctorId);
+        $consultationFee = DoctorClinic::query()
+            ->where('doctor_id', $doctorId)
+            ->where('clinic_id', $clinicId)
+            ->value('consultation_fee');
 
-        return (float) ($doctor?->profile?->consultation_fee ?? 0);
+        return (float) ($consultationFee ?? 0);
     }
 
     private function log(Appointment $appointment, User $actor, string $action): void
