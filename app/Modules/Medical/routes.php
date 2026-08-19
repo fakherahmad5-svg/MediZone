@@ -76,4 +76,6 @@ Route::middleware(['auth:sanctum', 'role:doctor'])
     ->group(function () {
         Route::get('/{appointmentId}/medical-record', [DoctorMedicalRecordController::class, 'show'])
             ->name('medical-record');
+        Route::get('/{patientId}/profile', [DoctorMedicalRecordController::class, 'patientProfile'])
+            ->name('medical-record');
     });
