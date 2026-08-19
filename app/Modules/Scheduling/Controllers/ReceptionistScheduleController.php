@@ -30,6 +30,17 @@ class ReceptionistScheduleController extends BaseController
         private readonly BlockedTimeService $blockedTimes,
     ) {}
 
+    public function show(Request $request, int $doctorId): JsonResponse
+    {
+        $clinicId = $this->receptionistClinicId($request);
+        $doctor   = $this->doctorLinkedToClinic($doctorId, $clinicId);
+        $this->ensureDoctorLinkedToClinic($doctor, $clinicId);
+
+        return $this->successResponse(
+            new ScheduleConfigResource($this->schedules->forDoctorClinic($doctor, $clinicId)),
+            'Schedule retrieved successfully.'
+        );
+    }
     public function setWeekly(SetWeeklyScheduleRequest $request, int $doctorId): JsonResponse
     {
         $clinicId = $this->receptionistClinicId($request);
@@ -43,6 +54,8 @@ class ReceptionistScheduleController extends BaseController
             'Weekly schedule saved successfully.'
         );
     }
+
+
 
     public function generateSlots(GenerateSlotsRequest $request, int $doctorId): JsonResponse
     {

@@ -10,10 +10,11 @@ return new class extends Migration
     {
         Schema::create('prescriptions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('encounter_id')->constrained('encounters')->cascadeOnDelete();
+            $table->foreignId('encounter_id')->unique()->constrained('encounters')->cascadeOnDelete();
             $table->foreignId('doctor_id')->constrained('doctors')->cascadeOnDelete();
             $table->text('notes')->nullable();
             $table->timestamps();
+
         });
     }
 

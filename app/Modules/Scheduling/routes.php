@@ -41,6 +41,7 @@ Route::middleware(['auth:sanctum', 'role:receptionist'])
             ->name('schedule.blocked-times.destroy');
 
         Route::prefix('doctors/{doctorId}/schedule')->name('doctors.schedule.')->group(function () {
+            Route::get('/', [ReceptionistScheduleController::class, 'show'])->name('show');
             Route::put('/', [ReceptionistScheduleController::class, 'setWeekly'])->name('update');
             Route::post('/generate-slots', [ReceptionistScheduleController::class, 'generateSlots'])->name('generate-slots');
             Route::get('/blocked-times', [ReceptionistScheduleController::class, 'listBlockedTimes'])->name('blocked-times.index');

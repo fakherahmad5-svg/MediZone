@@ -34,9 +34,14 @@ class ScheduleConfigService extends BaseService
 
     public function allForDoctor(Doctor $doctor)
     {
-        return ScheduleConfig::where('doctor_id', $doctor->id)
+        $config = ScheduleConfig::where('doctor_id', $doctor->id)
             ->with(['clinic:id,name', 'days.sessions'])
             ->get();
+
+        if (! $config) {
+            throw new NotFoundException('No schedule configuration found for this clinic yet.');
+        }
+        return $config;
     }
 
 

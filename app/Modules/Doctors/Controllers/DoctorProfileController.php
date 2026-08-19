@@ -86,7 +86,7 @@ class DoctorProfileController extends BaseController
         $this->profiles->joinClinic($doctor, $data['clinic_code'], (float) $data['consultation_fee']);
 
         return $this->successResponse(
-            new DoctorSelfResource($doctor->fresh(['profile', 'departments', 'clinics'])),
+            new DoctorSelfResource($doctor->fresh(['user','profile', 'departments', 'clinics'])),
             'Joined clinic successfully.'
         );
     }

@@ -3,6 +3,7 @@
 namespace App\Modules\Medical\Resources;
 
 use App\Core\Http\Resources\BaseResource;
+use App\Modules\Encounters\Resources\EncounterResource;
 
 /**
  * @mixin \App\Models\PatientRecord
@@ -33,6 +34,7 @@ class MedicalRecordResource extends BaseResource
 ],
             'medications' => MedicationResource::collection($this->whenLoaded('medications')),
             'attachments' => AttachmentResource::collection($this->whenLoaded('attachments')),
+            'encounters' => EncounterResource::collection($this->whenLoaded('encounters')),
         ];
     }
 }

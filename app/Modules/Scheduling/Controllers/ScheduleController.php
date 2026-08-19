@@ -109,9 +109,7 @@ class ScheduleController extends BaseController
         $to   = Carbon::parse($request->validated('date_to'));
 
         $config  = $this->schedules->forDoctorClinic($doctor, $clinicId);
-        if($config->is_vacation_mode){
-            throw new   BusinessException('vacation mode is enabled.');
-        }
+
         GenerateDoctorSlotsJob::dispatchSync($doctor, $clinic, $from, $to);
 
         return $this->successResponse(

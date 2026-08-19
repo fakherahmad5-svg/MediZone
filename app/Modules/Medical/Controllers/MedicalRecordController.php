@@ -24,6 +24,9 @@ class MedicalRecordController extends BaseController
             'medicalHistory.familyHistories',
             'medications.drug',
             'attachments',
+            'encounters.clinicalNotes',
+            'encounters.diagnoses',
+            'encounters.prescription.items.drug',
         ]);
 
         return $this->successResponse(
