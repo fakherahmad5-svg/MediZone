@@ -17,21 +17,7 @@ use App\Modules\Encounters\Services\EncounterService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-/**
- * DoctorEncounterController
- *
- * مكان الملف: app/Modules/Encounters/Controllers/DoctorEncounterController.php
- * الحالة: [NEW - Phase 8]
- *
- * نفس نمط IDOR من DoctorMedicalRecordController (Phase 7 verification):
- * كل شيء مرتبط بموعد (appointment_id)، لا patient_id حراً من الطبيب.
- *
- * Routes [auth:sanctum, role:doctor]، تحت doctor/appointments/{id}/encounter/*:
- *   GET  /                    → show()
- *   POST /notes                → storeNote()
- *   POST /diagnoses            → storeDiagnosis()
- *   POST /prescription-items   → storePrescriptionItem()
- */
+
 class DoctorEncounterController extends BaseController
 {
     public function __construct(
@@ -98,7 +84,8 @@ class DoctorEncounterController extends BaseController
         $item = $this->encounters->addPrescriptionItem(
             $appointment,
             $request->user(),
-            $request->validated('drug_id'),
+            $request->validated('drug_name'),
+            $request->validated('form'),
             $request->validated()
         );
 

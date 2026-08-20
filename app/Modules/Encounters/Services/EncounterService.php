@@ -15,6 +15,7 @@ use App\Models\Appointment;
 use App\Models\ClinicalNote;
 use App\Models\Diagnosis;
 use App\Models\Doctor;
+use App\Models\Drug;
 use App\Models\Encounter;
 use App\Models\Medication;
 use App\Models\Patient;
@@ -23,50 +24,6 @@ use App\Models\Prescription;
 use App\Models\PrescriptionItem;
 use App\Models\User;
 
-/**
- * EncounterService
- *
- * مكان الملف: app/Modules/Encounters/Services/EncounterService.php
- * الحالة: [NEW - Phase 8]
- *
- * يرث من BaseService (Phase 0) لـ transaction()/logError().
- *
- * ═══════════════════════════════════════════════════════════════
- *  ⚠️ قرار نطاق مُتَّفق عليه: نافذة الكتابة in_progress فقط
- * ═══════════════════════════════════════════════════════════════
- * AccessGuard::canPerform() (Phase 7) يسمح بـ Full أثناء checked_in
- * أو in_progress معاً. هذا الصنف يُضيف قيداً أضيق فوق ذلك عمداً —
- * لا تُقبَل كتابة سريرية (ملاحظة/تشخيص/وصفة) إلا والموعد in_progress
- * تحديداً (الفحص جارٍ فعلياً). القيد هنا، وليس تعديلاً على AccessGuard
- * نفسه، لأنه قرار نطاق خاص بـ Encounters وليس قاعدة وصول عامة.
- *
- * ═══════════════════════════════════════════════════════════════
- *  ⚠️ نقطة التكامل الأهم: الوصفة تُنشئ صف Medication تلقائياً
- * ═══════════════════════════════════════════════════════════════
- * migration الخاص بـ prescription_items (Phase 4) أضاف فعلياً FK
- * على medications.prescription_item_id بانتظار هذه اللحظة تحديداً.
- * كل عنصر وصفة يُنشئ صف Medication مقابلاً بـ
- * source=MedicationSource::Prescribed — فيظهر تلقائياً ضمن
- * GET /patient/medical-record/medications للمريض، ويبقى محمياً من
- * تعديل المريض عبر Medication::isEditableByPatient() الموجودة أصلاً
- * (تتحقق source===SelfReported فقط).
- *
- * ⚠️ migration الفعلي لـ medications تأكَّد لاحقاً (بعد التسليم
- * الأول لهذا الملف) — dosage/frequency/route/notes تُنسَخ الآن من
- * عنصر الوصفة مباشرة لأنها أعمدة حقيقية على Medication نفسه. route
- * آمن للنسخ لأن StorePrescriptionItemRequest يفرض نفس قيم
- * MedicationRoute (enum حقيقي على medications.route) عند الإدخال —
- * لا يمكن لقيمة غير صالحة الوصول لهذه النقطة أصلاً.
- *
- * ═══════════════════════════════════════════════════════════════
- *  ⚠️ فجوة في AccessAction: لا حالة مخصَّصة لـ"إنشاء تشخيص"
- * ═══════════════════════════════════════════════════════════════
- * AccessAction (Phase 1/7) يملك CreateEncounter/CreateNote/
- * CreatePrescription فقط — بلا CreateDiagnosis. سُجِّلت كتابة
- * التشخيص هنا تحت CreateNote (أقرب تصنيف موجود، كلاهما
- * requiresFullAccess()===true فيُحقَّق الأمان بنفس القوة) — قرار
- * تصنيف واعٍ، وليس خطأً.
- */
 class EncounterService extends BaseService
 {
     public function addClinicalNote(Appointment $appointment, User $doctorUser, string $content): ClinicalNote
@@ -88,10 +45,7 @@ class EncounterService extends BaseService
         });
     }
 
-    /**
-     * ⚠️ تُسجَّل تحت AccessAction::CreateNote (انظر توثيق الصنف أعلاه —
-     * لا يوجد CreateDiagnosis في الـ enum الحالي).
-     */
+
     public function addDiagnosis(Appointment $appointment, User $doctorUser, string $label, ?string $description): Diagnosis
     {
         [$doctor] = $this->ensureCanWrite($appointment, $doctorUser, AccessAction::CreateNote);
@@ -112,28 +66,26 @@ class EncounterService extends BaseService
         });
     }
 
-    /**
-     * إضافة عنصر وصفة — تُنشئ Prescription (firstOrCreate، وصفة واحدة
-     * لكل زيارة) ثم العنصر، ثم صف Medication مقابل تلقائياً (انظر
-     * توثيق الصنف أعلاه).
-     *
-     * @param array{dosage?:string,frequency?:string,duration?:string,route?:string,notes?:string} $data
-     */
-    public function addPrescriptionItem(Appointment $appointment, User $doctorUser, int $drugId, array $data): PrescriptionItem
+
+    public function addPrescriptionItem(Appointment $appointment, User $doctorUser, string $drug_name,string $form, array $data): PrescriptionItem
     {
         [$doctor] = $this->ensureCanWrite($appointment, $doctorUser, AccessAction::CreatePrescription);
 
-        return $this->transaction(function () use ($appointment, $doctor, $doctorUser, $drugId, $data) {
+        return $this->transaction(function () use ($appointment, $doctor, $doctorUser, $drug_name,$form, $data) {
             $encounter = $this->resolveOrCreateForAppointment($appointment, $doctorUser);
 
             $prescription = Prescription::firstOrCreate(
                 ['encounter_id' => $encounter->id],
                 ['doctor_id' => $doctor->id]
             );
+            $drug = Drug::firstOrCreate(
+                ['name' => $drug_name],
+                ['form' => $form ?? null, 'strength' => $data['strength'] ?? null]
+            );
 
             $item = PrescriptionItem::create([
                 'prescription_id' => $prescription->id,
-                'drug_id'         => $drugId,
+                'drug_id'         => $drug->id,
                 'dosage'          => $data['dosage'] ?? null,
                 'frequency'       => $data['frequency'] ?? null,
                 'duration'        => $data['duration'] ?? null,
@@ -141,14 +93,10 @@ class EncounterService extends BaseService
                 'notes'           => $data['notes'] ?? null,
             ]);
 
-            // [نقطة تكامل حرجة] يظهر تلقائياً في قائمة أدوية المريض.
-            // dosage/frequency/route/notes تُنسَخ من عنصر الوصفة —
-            // route آمن الآن لأن StorePrescriptionItemRequest يفرض
-            // نفس قيم MedicationRoute عند الإدخال (انظر توثيق ذلك
-            // الملف)، فلا خطر فشل SQL على enum medications.route.
+
             Medication::create([
                 'patient_record_id'    => $encounter->patient_record_id,
-                'drug_id'              => $drugId,
+                'drug_id'              => $drug->id,
                 'prescription_item_id' => $item->id,
                 'source'               => MedicationSource::Prescribed->value,
                 'status'               => MedicationStatus::Active->value,
@@ -182,8 +130,7 @@ class EncounterService extends BaseService
             throw new BusinessException('Nothing to submit — provide at least one note, diagnosis, or prescription item.');
         }
 
-        // تحقق واحد يكفي لكل الدفعة — نفس معيار CreateEncounter/
-        // CreateNote/CreatePrescription (كلها requiresFullAccess===true).
+
         [$doctor] = $this->ensureCanWrite($appointment, $doctorUser, AccessAction::CreateEncounter);
 
         return $this->transaction(function () use ($appointment, $doctor, $doctorUser, $notes, $diagnoses, $prescriptionItems) {
@@ -207,7 +154,6 @@ class EncounterService extends BaseService
                     'description'  => $diagnosisData['description'] ?? null,
                 ]);
 
-                // نفس قرار التصنيف الموثَّق أعلاه (لا CreateDiagnosis في AccessAction).
                 $this->logWrite($doctor, $appointment, AccessAction::CreateNote, Diagnosis::class, $diagnosis->id);
             }
 
@@ -218,9 +164,15 @@ class EncounterService extends BaseService
                 );
 
                 foreach ($prescriptionItems as $itemData) {
+
+                    $drug = Drug::firstOrCreate(
+                        ['name' => $itemData['drug_name']],
+                        ['form' => $itemData['form'] ?? null, 'strength' => $itemData['strength'] ?? null]
+                    );
+
                     $item = PrescriptionItem::create([
                         'prescription_id' => $prescription->id,
-                        'drug_id'         => $itemData['drug_id'],
+                        'drug_id'         => $drug->id,
                         'dosage'          => $itemData['dosage'] ?? null,
                         'frequency'       => $itemData['frequency'] ?? null,
                         'duration'        => $itemData['duration'] ?? null,
@@ -230,7 +182,7 @@ class EncounterService extends BaseService
 
                     Medication::create([
                         'patient_record_id'    => $encounter->patient_record_id,
-                        'drug_id'              => $itemData['drug_id'],
+                        'drug_id'              => $drug->id,
                         'prescription_item_id' => $item->id,
                         'source'               => MedicationSource::Prescribed->value,
                         'status'               => MedicationStatus::Active->value,
@@ -252,12 +204,7 @@ class EncounterService extends BaseService
 
     // ─────────────────────────────────────────────────────────────
 
-    /**
-     * إنشاء الـ Encounter ضمنياً عند أول كتابة — firstOrCreate بنفس
-     * نمط PatientObserver/SlotGeneratorService الراسخ. visit_type
-     * يُشتَق تلقائياً من appointment.encounter_type (قرار مُتَّفق
-     * عليه: لا إدخال يدوي، يمنع تضارب البيانات بين الحقلين).
-     */
+
     private function resolveOrCreateForAppointment(Appointment $appointment, User $actor): Encounter
     {
         $patientRecord = PatientRecord::where('patient_id', $appointment->patient_id)->first();
@@ -276,14 +223,7 @@ class EncounterService extends BaseService
         );
     }
 
-    /**
-     * دفاع مزدوج (نفس فلسفة Phase 7): تحقق ownership على الموعد، ثم
-     * قيد in_progress الخاص بهذه الوحدة، ثم AccessGuard::canPerform()
-     * كطبقة تحقق نهائية مستقلة.
-     *
-     * @return array{0: Doctor, 1: Patient}
-     * @throws AuthorizationException|BusinessException|NotFoundException
-     */
+
     private function ensureCanWrite(Appointment $appointment, User $doctorUser, AccessAction $action): array
     {
         $doctor = $this->ensureOwnership($appointment, $doctorUser);
@@ -296,7 +236,7 @@ class EncounterService extends BaseService
 
         $patient = $appointment->patient;
 
-        if (! app(AccessGuard::class)->canPerform($doctor, $patient, $action)) {
+        if (! app(AccessGuard::class)->canPerform($doctor, $patient, $action,$appointment)) {
             throw new AuthorizationException('You do not currently have write access to this patient\'s medical record.');
         }
 
@@ -320,7 +260,7 @@ class EncounterService extends BaseService
 
     private function logWrite(Doctor $doctor, Appointment $appointment, AccessAction $action, string $entityType, int $entityId): void
     {
-        $access = app(AccessGuard::class)->resolveActiveAccess($doctor, $appointment->patient);
+        $access = app(AccessGuard::class)->resolveActiveAccess($doctor, $appointment->patient,$appointment);
 
         if ($access) {
             app(AccessGuard::class)->logAccess($access, $action, $entityType, $entityId);

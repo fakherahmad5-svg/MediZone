@@ -37,7 +37,9 @@ class SubmitEncounterRequest extends FormRequest
             'diagnoses.*.description'   => ['nullable', 'string', 'max:2000'],
 
             'prescription_items'            => ['sometimes', 'array'],
-            'prescription_items.*.drug_id'   => ['required', 'integer', 'exists:drugs,id'],
+            'prescription_items.*.drug_name'  => ['required', 'string', 'max:150'],
+            'prescription_items.*.form'       => ['sometimes', 'nullable', 'string', 'max:50'],
+            'prescription_items.*.strength'   => ['sometimes', 'nullable', 'string', 'max:50'],
             'prescription_items.*.dosage'    => ['nullable', 'string', 'max:255'],
             'prescription_items.*.frequency' => ['nullable', 'string', 'max:255'],
             'prescription_items.*.duration'  => ['nullable', 'string', 'max:255'],

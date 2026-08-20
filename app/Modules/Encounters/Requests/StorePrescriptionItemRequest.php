@@ -23,7 +23,8 @@ class StorePrescriptionItemRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'drug_id'   => ['required', 'integer', 'exists:drugs,id'],
+            'drug_name'  => ['required', 'string', 'max:150'],
+            'form'       => ['sometimes', 'nullable', 'string', 'max:50'],
             'dosage'    => ['nullable', 'string', 'max:255'],
             'frequency' => ['nullable', 'string', 'max:255'],
             'duration'  => ['nullable', 'string', 'max:255'],

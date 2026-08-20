@@ -43,9 +43,9 @@ class AccessGuard extends BaseService
     }
 
 
-    public function canPerform(Doctor $doctor, Patient $patient, AccessAction $action): bool
+    public function canPerform(Doctor $doctor, Patient $patient, AccessAction $action ,Appointment $appointment): bool
     {
-        $level = $this->levelFor($doctor, $patient);
+        $level = $this->levelFor($doctor, $patient,$appointment);
 
         if ($level === null) {
             return false;
