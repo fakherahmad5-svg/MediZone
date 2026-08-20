@@ -8,8 +8,11 @@ use App\Core\Exceptions\NotFoundException;
 use App\Core\Http\Controllers\BaseController;
 use App\Core\Services\AccessGuard;
 use App\Models\Appointment;
+use App\Models\Encounter;
+use App\Models\Patient;
 use App\Models\PatientDoctorAccess;
 use App\Models\PatientRecord;
+use App\Modules\Encounters\Resources\EncounterResource;
 use App\Modules\Medical\Resources\MedicalRecordResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -80,6 +83,24 @@ class DoctorMedicalRecordController extends BaseController
         ], 'Medical record retrieved successfully.');
     }
 
+    public function patientProfile(Request $request,int $patientId ): JsonResponse
+    {
+        $doctor = $request->user()->doctor;
+        $patient = Patient::find($patientId);
+        $encounters = Encounter::whereHas('appointment', function ($q) use ($doctor, $patient) {
+            $q->where('doctor_id', $doctor->id)->where('patient_id', $patient->id);
+        })
+            ->with(['clinicalNotes', 'diagnoses', 'prescription.items.drug'])
+            ->latest('id')
+            ->get();
+
+        $this->logView($doctor, $patient, AccessAction::ViewHistory);
+
+        return $this->successResponse([
+            'patient'      => $this->patientSummary($patient),
+            'encounters'   => EncounterResource::collection($encounters),
+        ], 'Patient profile retrieved successfully.');
+    }
 
     private function patientSummary(\App\Models\Patient $patient): array
     {
