@@ -16,7 +16,7 @@ class DoctorVerificationService extends BaseService
 {
     public function findOrFail(int $id): Doctor
     {
-        $doctor = Doctor::with(['user:id,first_name,last_name,email', 'profile'])->find($id);
+        $doctor = Doctor::with(['user', 'profile', 'departments', 'clinics'])->find($id);
 
         if (! $doctor) {
             throw new NotFoundException('Doctor not found.');
@@ -30,7 +30,7 @@ class DoctorVerificationService extends BaseService
     {
         return Doctor::query()
             ->where('verification_status', DoctorVerificationStatus::Pending->value)
-            ->with(['user:id,first_name,last_name,email', 'profile', 'departments', 'clinics'])
+            ->with(['user', 'profile', 'departments', 'clinics'])
             ->oldest('id')
             ->paginate($perPage);
     }
@@ -39,7 +39,7 @@ class DoctorVerificationService extends BaseService
     public function paginateForAdmin(array $filters, int $perPage = 15): LengthAwarePaginator
     {
         return Doctor::query()
-            ->with(['user:id,first_name,last_name,email', 'profile'])
+            ->with(['user', 'profile', 'departments', 'clinics'])
             ->when(
                 ! empty($filters['status']),
                 fn ($q) => $q->where('verification_status', $filters['status'])
