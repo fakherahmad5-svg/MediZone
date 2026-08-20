@@ -86,7 +86,14 @@ class DoctorMedicalRecordController extends BaseController
     public function patientProfile(Request $request,int $patientId ): JsonResponse
     {
         $doctor = $request->user()->doctor;
+        if(! $doctor) {
+            throw new NotFoundException('Doctor profile not found for this account.');
+        }
+
         $patient = Patient::find($patientId);
+        if(! $patient) {
+            throw new NotFoundException('Patient not found.');
+        }
         $encounters = Encounter::whereHas('appointment', function ($q) use ($doctor, $patient) {
             $q->where('doctor_id', $doctor->id)->where('patient_id', $patient->id);
         })
@@ -94,7 +101,6 @@ class DoctorMedicalRecordController extends BaseController
             ->latest('id')
             ->get();
 
-        $this->logView($doctor, $patient, AccessAction::ViewHistory);
 
         return $this->successResponse([
             'patient'      => $this->patientSummary($patient),
