@@ -13,6 +13,12 @@ Route::prefix('doctors')->name('doctors.')->group(function () {
     Route::get('/{id}', [DoctorSearchController::class, 'show'])->name('show');
 });
 
+
+
+// ── Stripe OAuth callback (public — Stripe redirects here) ─────
+Route::get('doctor/stripe/oauth/callback', [DoctorStripeOnboardingController::class, 'oauthCallback'])->name('doctor.stripe.oauth.callback');
+
+
 // ── Doctor Self-Service ────────────────────────────────────────────
 Route::middleware(['auth:sanctum', 'role:doctor'])
     ->prefix('doctor/profile')
@@ -32,7 +38,9 @@ Route::middleware(['auth:sanctum', 'role:doctor'])
     ->name('doctor.stripe.')
     ->group(function () {
         Route::post('/onboarding-link', [DoctorStripeOnboardingController::class, 'createLink'])->name('onboarding-link');
+        Route::post('/connect-existing', [DoctorStripeOnboardingController::class, 'connectExisting'])->name('connect-existing');
         Route::post('/refresh-status', [DoctorStripeOnboardingController::class, 'refreshStatus'])->name('refresh-status');
+        
     });
 
 // ── Admin ─────────────────────────────────────────────────

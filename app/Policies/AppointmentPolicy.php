@@ -247,4 +247,19 @@ class AppointmentPolicy
         return $user->hasRole('admin', $clinicId)
             && $this->isClinicMember($user, $clinicId);
     }
+    public function confirmCashPayment(User $user, Appointment $appointment): bool
+{
+    if ($user->isSuperAdmin()) {
+        return true;
+    }
+
+    if (
+        $user->hasRole('receptionist', $appointment->clinic_id)
+        && $this->isClinicMember($user, $appointment->clinic_id)
+    ) {
+        return true;
+    }
+
+    return $this->isClinicAdmin($user, $appointment->clinic_id);
+}
 }

@@ -13,13 +13,14 @@ return [
     | a conventional file to locate the various service credentials.
     |
     */
-
 'stripe' => [
     'secret' => env('STRIPE_SECRET'),
     'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
 
     'checkout_success_url' => env('STRIPE_CHECKOUT_SUCCESS_URL'),
     'checkout_cancel_url' => env('STRIPE_CHECKOUT_CANCEL_URL'),
+
+    'connect_client_id' => env('STRIPE_CONNECT_CLIENT_ID'), // ⬅ جديد
 ],
 
     'postmark' => [

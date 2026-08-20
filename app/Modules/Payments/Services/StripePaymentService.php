@@ -12,6 +12,9 @@ use App\Core\Exceptions\StripeCheckoutFailedException;
 use App\Core\Exceptions\StripeConnectAccountException;
 use App\Core\Exceptions\StripeRefundFailedException;
 use App\Core\Exceptions\StripeWebhookVerificationException;
+use App\Core\Enums\StripeAccountType;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use App\Models\Appointment;
 use App\Models\Doctor;
 use App\Models\Payment;
@@ -26,6 +29,8 @@ use Stripe\Exception\SignatureVerificationException;
 use Stripe\Refund as StripeRefund;
 use Stripe\StripeClient;
 use Stripe\Webhook;
+use Stripe\OAuth;
+use Stripe\Stripe;
 
 class StripePaymentService
 {
@@ -66,6 +71,7 @@ class StripePaymentService
 
         $doctor->update([
             'stripe_connect_id' => $account->id,
+             'stripe_account_type' => StripeAccountType::Express,
         ]);
 
         return $account;
@@ -116,7 +122,118 @@ class StripePaymentService
             'payouts_enabled' => $payoutsEnabled,
         ];
     }
+            // ─────────────────────────────────────────────────────────────
+// Stripe Connect — linking an existing account (OAuth / Standard)
+// ─────────────────────────────────────────────────────────────
 
+private const OAUTH_STATE_CACHE_PREFIX = 'stripe_connect_oauth_state:';
+private const OAUTH_STATE_TTL_MINUTES = 15;
+
+/**
+ * Builds the Stripe OAuth authorize URL for a doctor who already
+ * owns a Stripe account and wants to connect it (instead of us
+ * creating a new Express account for them).
+ *
+ * We never trust a doctor_id coming back on the callback request —
+ * Stripe redirects the doctor's browser directly to our callback,
+ * unauthenticated. Instead we bind a one-time state token to this
+ * doctor now, and resolve it back on the callback.
+ */
+public function buildOAuthAuthorizeUrl(Doctor $doctor, string $redirectUrl): string
+{
+    $clientId = config('services.stripe.connect_client_id');
+
+    if (! $clientId) {
+        throw StripeConnectAccountException::fromStripeError(
+            'Stripe Connect OAuth client_id is not configured.'
+        );
+    }
+
+    $state = Str::random(40);
+
+    Cache::put(
+        self::OAUTH_STATE_CACHE_PREFIX . $state,
+        $doctor->id,
+        now()->addMinutes(self::OAUTH_STATE_TTL_MINUTES)
+    );
+
+    $query = http_build_query([
+        'response_type' => 'code',
+        'scope' => 'read_write',
+        'client_id' => $clientId,
+        'state' => $state,
+        'redirect_uri' => $redirectUrl,
+    ]);
+
+    return "https://connect.stripe.com/oauth/authorize?{$query}";
+}
+
+/**
+ * Exchanges the OAuth authorization code Stripe sent back for the
+ * connected account's id (acct_...), and links it to the doctor who
+ * initiated the flow — resolved from the one-time state value.
+ *
+ * This never creates a new Stripe account: it attaches the doctor's
+ * own existing account (type = standard) to our platform.
+ */
+public function linkExistingAccountViaOAuth(string $code, string $state): Doctor
+{
+    $cacheKey = self::OAUTH_STATE_CACHE_PREFIX . $state;
+    $doctorId = Cache::get($cacheKey);
+
+    if (! $doctorId) {
+        throw StripeConnectAccountException::fromStripeError(
+            'This Stripe connection link is invalid or has expired.'
+        );
+    }
+
+    // One-time use — prevents replay of the same state value.
+    Cache::forget($cacheKey);
+
+    $doctor = Doctor::query()->find($doctorId);
+
+    if (! $doctor) {
+        throw StripeConnectAccountException::fromStripeError(
+            'The doctor associated with this Stripe connection could not be found.'
+        );
+    }
+
+    $response = $this->exchangeOAuthCode($code);
+
+    $connectedAccountId = $response->stripe_user_id;
+
+    $account = $this->retrieveAccount($connectedAccountId);
+
+    $doctor->update([
+        'stripe_connect_id' => $connectedAccountId,
+        'stripe_account_type' => StripeAccountType::Standard,
+        'stripe_active' => (bool) $account->charges_enabled
+            && (bool) $account->payouts_enabled,
+    ]);
+
+    return $doctor->refresh();
+}
+
+/**
+ * Isolated in its own protected method (rather than inlined) so
+ * tests can mock the actual Stripe OAuth call without hitting the
+ * real API.
+ */
+protected function exchangeOAuthCode(string $code): \Stripe\StripeObject
+{
+    Stripe::setApiKey(config('services.stripe.secret'));
+
+    try {
+        return OAuth::token([
+            'grant_type' => 'authorization_code',
+            'code' => $code,
+        ]);
+    } catch (ApiErrorException $e) {
+        throw StripeConnectAccountException::fromStripeError(
+            $e->getMessage()
+        );
+    }
+}
     protected function retrieveAccount(string $accountId): StripeAccount
     {
         try {

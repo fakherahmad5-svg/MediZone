@@ -13,6 +13,7 @@ use App\Core\Exceptions\NotFoundException;
 use App\Core\Services\BaseService;
 use App\Models\Appointment;
 use App\Models\ClinicLog;
+use App\Models\Payment;
 use App\Models\Doctor;
 use App\Models\Patient;
 use App\Models\User;
@@ -94,7 +95,7 @@ $slot = app(DoctorTimeSlotService::class)->findAvailableOrFail($slotId);
         });
     }
 
-  public function bookOnBehalf(
+    public function bookOnBehalf(
     User $receptionistUser,
     int $patientId,
     int $slotId,
@@ -115,7 +116,7 @@ $slot = app(DoctorTimeSlotService::class)->findAvailableOrFail($slotId);
         $notes
     ) {
         $slot = app(DoctorTimeSlotService::class)
-            ->lockForBooking($slotId);
+            ->findAvailableOrFail($slotId);
 
         $doctor = Doctor::find($slot->doctor_id);
         $price = number_format($this->resolvePrice($slot->doctor_id), 2, '.', '');
@@ -126,16 +127,31 @@ $slot = app(DoctorTimeSlotService::class)->findAvailableOrFail($slotId);
             'patient_id' => $patient->id,
             'doctor_id' => $slot->doctor_id,
             'slot_id' => $slot->id,
-            'status' => AppointmentStatus::Scheduled->value,
+
+            
+            'status' => AppointmentStatus::AwaitingPayment->value,
             'encounter_type' => $type->value,
-            // Receptionist bookings are always settled in person —
-            // there is no Stripe checkout step for this path.
             'payment_method' => PaymentMethod::Cash->value,
             'price' => $price,
+            'deposit_type' => null,
+            'deposit_amount' => '0.00',
+            'remaining_cash_amount' => $price,
+
             'commission_percentage' => $commission['commission_percentage'],
             'commission_amount' => $commission['commission_amount'],
             'created_by' => $receptionistUser->id,
             'notes' => $notes,
+        ]);
+
+        Payment::create([
+            'appointment_id' => $appointment->id,
+            'patient_id' => $patient->id,
+            'doctor_id' => $slot->doctor_id,
+            'clinic_id' => $slot->clinic_id,
+            'amount' => $price,
+            'currency' => 'usd',
+            'method' => PaymentMethod::Cash->value,
+            'status' => PaymentStatus::Pending->value,
         ]);
 
         $this->log(
@@ -145,6 +161,70 @@ $slot = app(DoctorTimeSlotService::class)->findAvailableOrFail($slotId);
         );
 
         return $appointment->fresh([
+            'clinic',
+            'doctor.user',
+            'patient.user',
+            'slot',
+        ]);
+    });
+}
+/**
+ * Receptionist confirms she physically received the cash payment
+ * for a bookOnBehalf() appointment. This is the ONLY point where
+ * the slot actually gets reserved for this flow.
+ */
+public function confirmCashPayment(
+    Appointment $appointment,
+    User $receptionistUser
+): Appointment {
+    return $this->transaction(function () use (
+        $appointment,
+        $receptionistUser
+    ) {
+        $locked = Appointment::query()
+            ->whereKey($appointment->id)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        if ($locked->status !== AppointmentStatus::AwaitingPayment) {
+            throw new BusinessException(
+                'This appointment is not awaiting cash payment confirmation.'
+            );
+        }
+  if ($locked->slot_id) {
+            app(DoctorTimeSlotService::class)
+                ->lockForBooking($locked->slot_id);
+        }
+$payment = Payment::where('appointment_id', $locked->id)
+    ->where('status', PaymentStatus::Pending)
+    ->first();
+
+if (! $payment) {
+    throw new BusinessException(
+        'No pending cash payment exists for this appointment.'
+    );
+}
+
+if ($locked->slot_id) {
+    app(DoctorTimeSlotService::class)
+        ->lockForBooking($locked->slot_id);
+}
+
+$payment->update([
+    'status' => PaymentStatus::Paid,
+    'paid_at' => now(),
+]);
+
+$locked->update([
+    'status' => AppointmentStatus::Scheduled,
+]);
+        $this->log(
+            $locked,
+            $receptionistUser,
+            'appointment_cash_payment_confirmed'
+        );
+
+        return $locked->fresh([
             'clinic',
             'doctor.user',
             'patient.user',
@@ -186,8 +266,12 @@ public function createWalkIn(
         $type,
         $notes
     ) {
-        $price = number_format($this->resolvePrice($doctor->id), 2, '.', '');
-        $commission = $this->computeCommissionSnapshot($doctor, $price);
+        $price = number_format(
+            $this->resolvePrice($doctor->id),
+            2,
+            '.',
+            ''
+        );
 
         $appointment = Appointment::create([
             'clinic_id' => $clinicId,
@@ -198,8 +282,8 @@ public function createWalkIn(
             'encounter_type' => $type->value,
             'payment_method' => PaymentMethod::Cash->value,
             'price' => $price,
-            'commission_percentage' => $commission['commission_percentage'],
-            'commission_amount' => $commission['commission_amount'],
+            'deposit_amount' => '0.00',
+            'remaining_cash_amount' => $price,
             'created_by' => $receptionistUser->id,
             'notes' => $notes,
         ]);
@@ -216,8 +300,7 @@ public function createWalkIn(
             'patient.user',
         ]);
     });
-
-    }
+}
 
     public function reschedule(
         User $patientUser,
@@ -280,71 +363,7 @@ public function createWalkIn(
      * webhook was delayed, missed, or never fired (e.g. the patient
      * never even reached Stripe Checkout).
      */
-    public function releaseStaleAwaitingPaymentAppointments(
-        int $minutesThreshold = 120
-    ): int {
-        $cutoff = now()->subMinutes($minutesThreshold);
-
-        $stale = Appointment::where(
-            'status',
-            AppointmentStatus::AwaitingPayment
-        )
-            ->where('created_at', '<=', $cutoff)
-            ->get();
-
-        $released = 0;
-
-        foreach ($stale as $appointment) {
-            $wasReleased = $this->transaction(function () use ($appointment) {
-                $lockedAppointment = Appointment::query()
-                    ->whereKey($appointment->id)
-                    ->lockForUpdate()
-                    ->first();
-
-                if (! $lockedAppointment) {
-                    return false;
-                }
-
-                // Re-check the status after acquiring the lock.
-                if (
-                    $lockedAppointment->status !==
-                    AppointmentStatus::AwaitingPayment
-                ) {
-                    return false;
-                }
-
-                $lockedAppointment->update([
-                    'status' => AppointmentStatus::Cancelled,
-                    'cancelled_at' => now(),
-                    'cancellation_reason' => 'Payment window expired.',
-                ]);
-
-                $payment = $lockedAppointment->latestPayment;
-
-                if (
-                    $payment &&
-                    $payment->status === PaymentStatus::Pending
-                ) {
-                    $payment->update([
-                        'status' => PaymentStatus::Failed,
-                    ]);
-                }
-
-                if ($lockedAppointment->slot_id) {
-                    app(DoctorTimeSlotService::class)
-                        ->release($lockedAppointment->slot_id);
-                }
-
-                return true;
-            });
-
-            if ($wasReleased) {
-                $released++;
-            }
-        }
-
-        return $released;
-    }
+    
     private function computeCommissionSnapshot(?Doctor $doctor, string $price): array
 {
     $commissionPercentage = (string) ($doctor?->commission_percentage ?? '0.00');

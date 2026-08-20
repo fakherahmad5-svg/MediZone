@@ -48,4 +48,5 @@ Route::middleware('role:receptionist')
         Route::post('/{id}/check-in', [ReceptionistAppointmentController::class, 'checkIn'])->name('check-in');
         Route::post('/{id}/cancel', [ReceptionistAppointmentController::class, 'cancel'])->name('cancel');
         Route::post('/{id}/no-show', [ReceptionistAppointmentController::class, 'noShow'])->name('no-show');
+        Route::post('/{id}/confirm-cash-payment', [ReceptionistAppointmentController::class, 'confirmCashPayment'])->name('confirm-cash-payment');
     });

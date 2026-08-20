@@ -1,6 +1,7 @@
 <?php
 
 use App\Core\Enums\DoctorVerificationStatus;
+use App\Core\Enums\StripeAccountType;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -26,6 +27,7 @@ return new class extends Migration
             
             $table->index('verification_status');
             $table->index('stripe_connect_id');
+            $table->enum('stripe_account_type', StripeAccountType::values())->nullable();
             $table->index('stripe_active');
         });
     }

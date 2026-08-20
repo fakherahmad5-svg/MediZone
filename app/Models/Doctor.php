@@ -22,18 +22,18 @@ class Doctor extends Model implements HasMedia
     use SoftDeletes , InteractsWithMedia,HasFactory;
 
     protected $guarded = [];
+protected function casts(): array
+{
+    return [
+        'verification_status' => DoctorVerificationStatus::class,
+        'practice_start_date' => 'date',
 
-    protected function casts(): array
-    {
-        return [ 
-            'verification_status' => DoctorVerificationStatus::class,
-            'practice_start_date' => 'date',
-
-            'stripe_active' => 'boolean',
-            'examination_fee' => 'decimal:2',
-            'commission_percentage' => 'decimal:2',
-        ]; 
-    }
+        'stripe_active' => 'boolean',
+        'stripe_account_type' => \App\Core\Enums\StripeAccountType::class, // ⬅️ جديد
+        'examination_fee' => 'decimal:2',
+        'commission_percentage' => 'decimal:2',
+    ];
+}
     public function profile(): HasOne
     {
         return $this->hasOne(DoctorProfile::class);

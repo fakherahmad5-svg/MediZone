@@ -136,6 +136,27 @@ public function findForReceptionist(User $receptionistUser, int $appointmentId):
             'Walk-in appointment created successfully.'
         );
     }
+    public function confirmCashPayment(
+    Request $request,
+    int $id
+): JsonResponse {
+    $appointment = $this->queries->findForReceptionist(
+        $request->user(),
+        $id
+    );
+
+    $this->authorize('confirmCashPayment', $appointment);
+
+    $updated = $this->booking->confirmCashPayment(
+        $appointment,
+        $request->user()
+    );
+
+    return $this->successResponse(
+        new AppointmentResource($updated),
+        'Cash payment confirmed. Appointment scheduled.'
+    );
+}
 
     public function checkIn(
         Request $request,
