@@ -10,6 +10,7 @@ use App\Core\Exceptions\AuthorizationException;
 use App\Core\Exceptions\BusinessException;
 use App\Core\Exceptions\NotFoundException;
 use App\Core\Services\BaseService;
+use App\Core\Services\NotificationService;
 use App\Models\Appointment;
 use App\Models\ClinicLog;
 use App\Models\Doctor;
@@ -43,6 +44,7 @@ class AppointmentBookingService extends BaseService
 
             $this->log($appointment, $patientUser, 'appointment_booked');
             $this->grantInitialAccess($appointment);
+            $this->notifyBooked($appointment);
             return $appointment->fresh(['clinic', 'doctor.user', 'slot']);
         });
     }
@@ -73,6 +75,8 @@ class AppointmentBookingService extends BaseService
 
             $this->log($appointment, $receptionistUser, 'appointment_booked_on_behalf');
             $this->grantInitialAccess($appointment);
+            $this->notifyBooked($appointment);
+
             return $appointment->fresh(['clinic', 'doctor.user', 'patient.user', 'slot']);
         });
     }
@@ -111,6 +115,7 @@ class AppointmentBookingService extends BaseService
 
             $this->log($appointment, $receptionistUser, 'walk_in_appointment_created');
             $this->grantInitialAccess($appointment);
+            $this->notifyBooked($appointment);
             return $appointment->fresh(['clinic', 'doctor.user', 'patient.user']);
         });
     }
@@ -148,8 +153,14 @@ class AppointmentBookingService extends BaseService
             if ($oldSlotId) {
                 app(DoctorTimeSlotService::class)->release($oldSlotId);
             }
+            $fresh = $appointment->fresh(['clinic', 'doctor.user', 'slot']);
 
-            return $appointment->fresh(['clinic', 'doctor.user', 'slot']);
+            app(NotificationService::class)->notify($fresh->patient->user, NotificationType::AppointmentRescheduled, [
+                'doctor_name' => $this->doctorName($fresh),
+                'new_date'    => $fresh->slot?->starts_at?->format('Y-m-d H:i'),
+            ]);
+
+            return $fresh;
         });
     }
 
@@ -168,6 +179,23 @@ class AppointmentBookingService extends BaseService
             'status'      => AccessStatus::Active->value,
             'granted_at'  => now(),
         ]);
+    }
+    private function notifyBooked(Appointment $appointment): void
+    {
+        $appointment->loadMissing(['doctor.user', 'patient.user', 'slot']);
+
+        app(NotificationService::class)->notify($appointment->patient->user, NotificationType::AppointmentConfirmed, [
+            'doctor_name'      => $this->doctorName($appointment),
+            'appointment_date' => $appointment->slot?->starts_at?->format('Y-m-d H:i')
+                ?? now()->format('Y-m-d H:i'), // Walk-in: بلا slot، الآن هو موعد الزيارة فعلياً.
+        ]);
+    }
+
+    private function doctorName(Appointment $appointment): string
+    {
+        $user = $appointment->doctor?->user;
+
+        return $user ? trim("{$user->first_name} {$user->last_name}") : '';
     }
 
     private function patientFor(User $user): Patient

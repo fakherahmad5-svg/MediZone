@@ -19,7 +19,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     require base_path('app/Modules/Scheduling/routes.php');
     require base_path('app/Modules/DoctorEngagement/routes.php');
     require base_path('app/Modules/Administration/routes.php');
-
+    require base_path('app/Modules/Notifications/routes.php');
     // ──────────────────────────────────────────────────────────────────
     // PROTECTED ROUTES
     // ──────────────────────────────────────────────────────────────────

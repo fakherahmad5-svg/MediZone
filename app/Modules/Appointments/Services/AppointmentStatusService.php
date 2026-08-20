@@ -7,6 +7,7 @@ use App\Core\Enums\AppointmentStatus;
 use App\Core\Exceptions\AuthorizationException;
 use App\Core\Exceptions\BusinessException;
 use App\Core\Services\BaseService;
+use App\Core\Services\NotificationService;
 use App\Models\Appointment;
 use App\Models\ClinicLog;
 use App\Models\PatientDoctorAccess;
@@ -40,8 +41,14 @@ class AppointmentStatusService extends BaseService
         $this->ensureActorCan($appointment, $actor, ['doctor']);
         $this->ensureTransition($appointment, AppointmentStatus::InProgress, AppointmentStatus::Completed);
 
-        return $this->applyTransition($appointment, $actor, AppointmentStatus::Completed, 'appointment_completed');
-    }
+        $result = $this->applyTransition($appointment, $actor, AppointmentStatus::Completed, 'appointment_completed');
+
+        $result->loadMissing(['doctor.user', 'patient.user']);
+        app(NotificationService::class)->notify($result->patient->user, NotificationType::AppointmentCompleted, [
+            'doctor_name' => $this->doctorName($result),
+        ]);
+
+        return $result; }
 
 
     public function cancel(Appointment $appointment, User $actor, string $reason): Appointment
@@ -68,7 +75,14 @@ class AppointmentStatusService extends BaseService
             $this->closeAccess($appointment, AccessStatus::Revoked, $actor);
             $this->log($appointment, $actor, 'appointment_cancelled', $reason);
 
-            return $appointment->fresh();
+            $fresh = $appointment->fresh();
+            $fresh->loadMissing(['doctor.user', 'patient.user', 'slot']);
+            app(NotificationService::class)->notify($fresh->patient->user, NotificationType::AppointmentCancelled, [
+                'doctor_name'      => $this->doctorName($fresh),
+                'appointment_date' => $fresh->slot?->starts_at?->format('Y-m-d H:i'),
+            ]);
+
+            return $fresh;
         });
     }
 
@@ -177,5 +191,11 @@ class AppointmentStatusService extends BaseService
             'entity_type' => Appointment::class,
             'entity_id'   => $appointment->id,
         ]);
+    }
+    private function doctorName(Appointment $appointment): string
+    {
+        $user = $appointment->doctor?->user;
+
+        return $user ? trim("{$user->first_name} {$user->last_name}") : '';
     }
 }
