@@ -14,9 +14,18 @@ return [
     |
     */
 
+'stripe' => [
+    'secret' => env('STRIPE_SECRET'),
+    'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+
+    'checkout_success_url' => env('STRIPE_CHECKOUT_SUCCESS_URL'),
+    'checkout_cancel_url' => env('STRIPE_CHECKOUT_CANCEL_URL'),
+],
+
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],
+    
 
     'resend' => [
         'key' => env('RESEND_KEY'),

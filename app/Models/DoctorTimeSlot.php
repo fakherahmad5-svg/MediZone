@@ -8,9 +8,11 @@ use App\Models\Clinic;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class DoctorTimeSlot extends Model
 {
+     use HasFactory;
     protected $table = 'doctor_time_slots';
     protected $fillable = [
         'clinic_id',

@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Auth\Controllers\VerificationController;
+use App\Modules\Payments\Controllers\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
@@ -21,6 +22,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     // ──────────────────────────────────────────────────────────────────
     // PROTECTED ROUTES
     // ──────────────────────────────────────────────────────────────────
+    Route::post( '/webhooks/stripe', [StripeWebhookController::class, 'handle'])->name('webhooks.stripe');
     Route::middleware('auth:sanctum')->group(function () {
 
 
@@ -55,7 +57,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         // require base_path('app/Modules/Consultations/routes.php');
 
         // ── Payments ─────────────────────────────────────────────────
-        // require base_path('app/Modules/Payments/routes.php');
+        require base_path('app/Modules/Payments/routes.php');
 
         // ── Notifications ────────────────────────────────────────────
         // require base_path('app/Modules/Notifications/routes.php');

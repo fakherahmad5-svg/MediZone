@@ -12,10 +12,8 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
-
 class DoctorTimeSlotService extends BaseService
 {
-
     public function availability(Doctor $doctor, ?int $clinicId, Carbon $from, Carbon $to): Collection
     {
         return DoctorTimeSlot::where('doctor_id', $doctor->id)
@@ -26,7 +24,6 @@ class DoctorTimeSlotService extends BaseService
             ->get();
     }
 
-
     public function fullSchedule(Doctor $doctor, ?int $clinicId, Carbon $from, Carbon $to): Collection
     {
         return DoctorTimeSlot::where('doctor_id', $doctor->id)
@@ -36,6 +33,29 @@ class DoctorTimeSlotService extends BaseService
             ->get();
     }
 
+    /**
+     * Read-only availability check — does NOT lock or reserve the slot.
+     * Used at booking time, before payment: the patient's chosen slot
+     * must exist and be available, but reservation itself only happens
+     * once Stripe confirms payment (see lockForBooking(), called from
+     * the webhook handler).
+     */
+    public function findAvailableOrFail(int $slotId): DoctorTimeSlot
+    {
+        $slot = DoctorTimeSlot::where('id', $slotId)->first();
+
+        if (! $slot) {
+            throw new NotFoundException('Time slot not found.');
+        }
+
+        if (! $slot->isAvailable()) {
+            throw new ConflictException(
+                'This time slot is no longer available. Please choose another slot.'
+            );
+        }
+
+        return $slot;
+    }
 
     public function lockForBooking(int $slotId): DoctorTimeSlot
     {
@@ -57,7 +77,6 @@ class DoctorTimeSlotService extends BaseService
             return $slot->fresh();
         });
     }
-
 
     public function release(int $slotId): void
     {

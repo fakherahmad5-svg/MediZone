@@ -4,17 +4,21 @@ namespace App\Modules\Appointments\Controllers;
 
 use App\Core\Enums\ConsultationType;
 use App\Core\Exceptions\AuthorizationException;
+use App\Core\Exceptions\NotFoundException;
 use App\Core\Http\Controllers\BaseController;
+use App\Models\DoctorTimeSlot;
+use App\Models\Appointment;
+use App\Models\User;
 use App\Modules\Appointments\Requests\CancelAppointmentRequest;
 use App\Modules\Appointments\Requests\CreateWalkInAppointmentRequest;
 use App\Modules\Appointments\Requests\ReceptionistBookAppointmentRequest;
 use App\Modules\Appointments\Resources\AppointmentResource;
 use App\Modules\Appointments\Services\AppointmentBookingService;
+use App\Modules\Appointments\Services\AppointmentCancellationService;
 use App\Modules\Appointments\Services\AppointmentQueryService;
 use App\Modules\Appointments\Services\AppointmentStatusService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-
 
 class ReceptionistAppointmentController extends BaseController
 {
@@ -22,22 +26,39 @@ class ReceptionistAppointmentController extends BaseController
         private readonly AppointmentBookingService $booking,
         private readonly AppointmentStatusService $status,
         private readonly AppointmentQueryService $queries,
+        private readonly AppointmentCancellationService $cancellationService,
     ) {}
 
     public function index(Request $request): JsonResponse
     {
-        $filters = $request->only(['status', 'doctor_id', 'date']);
+        $this->authorize('viewAny', Appointment::class);
+
+        $filters = $request->only([
+            'status',
+            'doctor_id',
+            'date',
+        ]);
 
         return $this->paginatedResponse(
-            $this->queries->forReceptionist($request->user(), $filters, paginate_per_page()),
+            $this->queries->forReceptionist(
+                $request->user(),
+                $filters,
+                paginate_per_page()
+            ),
             'Appointments retrieved successfully.',
-            fn ($appointment) => (new AppointmentResource($appointment))->resolve($request)
+            fn ($appointment) => (new AppointmentResource($appointment))
+                ->resolve($request)
         );
     }
 
     public function show(Request $request, int $id): JsonResponse
     {
-        $appointment = $this->queries->findForReceptionist($request->user(), $id);
+        $appointment = $this->queries->findForReceptionist(
+            $request->user(),
+            $id
+        );
+
+        $this->authorize('view', $appointment);
 
         return $this->successResponse(
             new AppointmentResource($appointment),
@@ -45,30 +66,61 @@ class ReceptionistAppointmentController extends BaseController
         );
     }
 
-    public function store(ReceptionistBookAppointmentRequest $request): JsonResponse
-    {
-        $data = $request->validated();
+public function store(ReceptionistBookAppointmentRequest $request): JsonResponse
+{
+    $this->authorize('create', Appointment::class);
 
-        $appointment = $this->booking->bookOnBehalf(
-            $request->user(),
-            $data['patient_id'],
-            $data['slot_id'],
-            ConsultationType::from($data['encounter_type']),
-            $data['notes'] ?? null
-        );
+    $clinicId = $this->receptionistClinicId($request);
 
-        $this->ensureSameClinic($request, $appointment->clinic_id);
+    $data = $request->validated();
 
-        return $this->createdResponse(
-            new AppointmentResource($appointment),
-            'Appointment booked successfully.'
-        );
+    // تحقق الملكية قبل ما نلمس الداتابيز — مش بعدها.
+    $slot = DoctorTimeSlot::find($data['slot_id']);
+
+    if (! $slot || $slot->clinic_id !== $clinicId) {
+        throw new AuthorizationException('You can only book appointments within your own clinic.');
     }
 
-    public function walkIn(CreateWalkInAppointmentRequest $request): JsonResponse
-    {
+    $appointment = $this->booking->bookOnBehalf(
+        $request->user(),
+        $data['patient_id'],
+        $data['slot_id'],
+        ConsultationType::from($data['encounter_type']),
+        $data['notes'] ?? null
+    );
+
+    return $this->createdResponse(
+        new AppointmentResource($appointment),
+        'Appointment booked successfully.'
+    );
+}
+public function findForReceptionist(User $receptionistUser, int $appointmentId): Appointment
+{
+    $clinicId = $receptionistUser->clinicUsers()->value('clinic_id');
+
+    if (! $clinicId) {
+        throw new AuthorizationException('Your account is not linked to any clinic.');
+    }
+
+    $appointment = Appointment::where('id', $appointmentId)
+        ->where('clinic_id', $clinicId)
+        ->with(['doctor.user:id,first_name,last_name', 'patient.user:id,first_name,last_name', 'slot'])
+        ->first();
+
+    if (! $appointment) {
+        throw new NotFoundException('Appointment not found.');
+    }
+
+    return $appointment;
+}
+    public function walkIn(
+        CreateWalkInAppointmentRequest $request
+    ): JsonResponse {
+        $this->authorize('create', Appointment::class);
+
         $clinicId = $this->receptionistClinicId($request);
-        $data     = $request->validated();
+
+        $data = $request->validated();
 
         $appointment = $this->booking->createWalkIn(
             $request->user(),
@@ -85,35 +137,65 @@ class ReceptionistAppointmentController extends BaseController
         );
     }
 
-    public function checkIn(Request $request, int $id): JsonResponse
-    {
-        $appointment = $this->queries->findForReceptionist($request->user(), $id);
+    public function checkIn(
+        Request $request,
+        int $id
+    ): JsonResponse {
+        $appointment = $this->queries->findForReceptionist(
+            $request->user(),
+            $id
+        );
 
-        $updated = $this->status->checkIn($appointment, $request->user());
+        $this->authorize('checkIn', $appointment);
 
+        $updated = $this->status->checkIn(
+            $appointment,
+            $request->user()
+        );
         return $this->successResponse(
             new AppointmentResource($updated),
             'Patient checked in successfully.'
         );
     }
 
-    public function cancel(CancelAppointmentRequest $request, int $id): JsonResponse
-    {
-        $appointment = $this->queries->findForReceptionist($request->user(), $id);
+    public function cancel(
+        CancelAppointmentRequest $request,
+        int $id
+    ): JsonResponse {
+        $appointment = $this->queries->findForReceptionist(
+            $request->user(),
+            $id
+        );
 
-        $updated = $this->status->cancel($appointment, $request->user(), $request->validated('reason'));
+        $this->authorize('cancel', $appointment);
+
+        $this->cancellationService->cancel(
+            $appointment,
+            $request->validated('reason'),
+            $request->user()
+        );
 
         return $this->successResponse(
-            new AppointmentResource($updated),
+            new AppointmentResource($appointment->fresh()),
             'Appointment cancelled.'
         );
     }
 
-    public function noShow(Request $request, int $id): JsonResponse
-    {
-        $appointment = $this->queries->findForReceptionist($request->user(), $id);
+    public function noShow(
+        Request $request,
+        int $id
+    ): JsonResponse {
+        $appointment = $this->queries->findForReceptionist(
+            $request->user(),
+            $id
+        );
 
-        $updated = $this->status->markNoShow($appointment, $request->user());
+        $this->authorize('noShow', $appointment);
+
+        $updated = $this->status->markNoShow(
+            $appointment,
+            $request->user()
+        );
 
         return $this->successResponse(
             new AppointmentResource($updated),
@@ -121,23 +203,18 @@ class ReceptionistAppointmentController extends BaseController
         );
     }
 
-    // ─────────────────────────────────────────────────────────────
-
     private function receptionistClinicId(Request $request): int
     {
-        $clinicId = $request->user()->clinicUsers()->value('clinic_id');
+        $clinicId = $request->user()
+            ->clinicUsers()
+            ->value('clinic_id');
 
         if (! $clinicId) {
-            throw new AuthorizationException('Your account is not linked to any clinic.');
+            throw new AuthorizationException(
+                'Your account is not linked to any clinic.'
+            );
         }
 
         return $clinicId;
-    }
-
-    private function ensureSameClinic(Request $request, int $appointmentClinicId): void
-    {
-        if ($this->receptionistClinicId($request) !== $appointmentClinicId) {
-            throw new AuthorizationException('You can only book appointments within your own clinic.');
-        }
     }
 }

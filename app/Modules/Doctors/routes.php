@@ -3,6 +3,8 @@
 use App\Modules\Doctors\Controllers\DoctorProfileController;
 use App\Modules\Doctors\Controllers\DoctorSearchController;
 use App\Modules\Doctors\Controllers\DoctorVerificationController;
+use App\Modules\Doctors\Controllers\DoctorStripeOnboardingController;
+use App\Modules\Payments\Controllers\StripeWebhookController; 
 use Illuminate\Support\Facades\Route;
 
 // ── Public  ──────────────────────────────────────
@@ -23,6 +25,14 @@ Route::middleware(['auth:sanctum', 'role:doctor'])
         Route::post('/clinics/join', [DoctorProfileController::class, 'joinClinic'])->name('clinics.join');
         Route::post('/clinics/create', [DoctorProfileController::class, 'createClinic'])->name('clinics.create');
         Route::post('/departments/leave', [DoctorProfileController::class, 'leaveDepartment'])->name('departments.leave');
+    });
+    // ── Doctor Stripe ────────────────────────────────────────────
+Route::middleware(['auth:sanctum', 'role:doctor'])
+    ->prefix('doctor/stripe')
+    ->name('doctor.stripe.')
+    ->group(function () {
+        Route::post('/onboarding-link', [DoctorStripeOnboardingController::class, 'createLink'])->name('onboarding-link');
+        Route::post('/refresh-status', [DoctorStripeOnboardingController::class, 'refreshStatus'])->name('refresh-status');
     });
 
 // ── Admin ─────────────────────────────────────────────────

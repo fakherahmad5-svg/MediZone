@@ -7,9 +7,25 @@ use App\Core\Enums\Concerns\EnumValues;
 enum PaymentStatus: string
 {
     use EnumValues;
+  
+    case Unpaid             = 'unpaid';
+    case Pending            = 'pending';
+    case Paid               = 'paid';
+    case PartiallyPaid      = 'partially_paid';
+    case Refunded           = 'refunded';
+    case PartiallyRefunded  = 'partially_refunded';
+    case Failed             = 'failed';
 
-    case Pending   = 'pending';
-    case Completed = 'completed';
-    case Failed    = 'failed';
-    case Refunded  = 'refunded';
+    
+    public function isTerminal(): bool
+    {
+        return in_array($this, [self::Paid, self::Refunded, self::Failed], true);
+    }
+
+  
+    public function isRefundable(): bool
+    {
+        return in_array($this, [self::Paid, self::PartiallyPaid], true);
+    }
 }
+ 

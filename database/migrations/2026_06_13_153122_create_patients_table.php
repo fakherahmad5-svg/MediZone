@@ -12,6 +12,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->string('blood_type')->nullable();
+            $table->unsignedTinyInteger('no_show_count')->default(0);
+            $table->boolean('cash_payment_blocked')->default(false);
             $table->timestamps();
             $table->softDeletes();
         });

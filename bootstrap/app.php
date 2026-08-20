@@ -22,7 +22,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\ValidationException;use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
@@ -82,8 +82,27 @@ return Application::configure(basePath: dirname(__DIR__))
                     'message' => 'Unauthenticated. Please login to continue.',
                 ], 401);
             }
-
             if ($e instanceof LaravelAuthorizationException) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have permission to perform this action.',
+                ], 403);
+            }
+
+            /*
+             * Laravel internally converts AuthorizationException into
+             * AccessDeniedHttpException BEFORE it ever reaches this
+             * render() closure, whenever the underlying Gate\Response
+             * carries an explicit HTTP status (which $this->authorize()
+             * always produces). That means the LaravelAuthorizationException
+             * check above never actually catches policy denials — they
+             * fall through to here instead. Discovered via the first
+             * real HTTP-level authorization test in this project
+             * (PaymentControllerTest); every $this->authorize() denial
+             * across the whole API was silently returning 500 instead
+             * of 403 until this was added.
+             */
+            if ($e instanceof AccessDeniedHttpException) {
                 return response()->json([
                     'success' => false,
                     'message' => 'You do not have permission to perform this action.',

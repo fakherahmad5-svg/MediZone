@@ -11,159 +11,254 @@ use App\Models\ClinicLog;
 use App\Models\User;
 use App\Modules\Scheduling\Services\DoctorTimeSlotService;
 
-
 class AppointmentStatusService extends BaseService
 {
+    public function __construct(
+        private readonly AppointmentCancellationService $cancellationService,
+    ) {}
 
-    public function checkIn(Appointment $appointment, User $actor): Appointment
-    {
-        $this->ensureActorCan($appointment, $actor, ['receptionist', 'doctor', 'admin']);
-        $this->ensureTransition($appointment, AppointmentStatus::Scheduled, AppointmentStatus::CheckedIn);
+    public function checkIn(
+        Appointment $appointment,
+        User $actor
+    ): Appointment {
+        $this->ensureActorCan($appointment, $actor, [
+            'receptionist',
+            'doctor',
+            'admin',
+        ]);
 
-        return $this->applyTransition($appointment, $actor, AppointmentStatus::CheckedIn, 'appointment_checked_in');
+        $this->ensureTransition(
+            $appointment,
+            AppointmentStatus::Scheduled,
+            AppointmentStatus::CheckedIn
+        );
+
+        return $this->applyTransition(
+            $appointment,
+            $actor,
+            AppointmentStatus::CheckedIn,
+            'appointment_checked_in'
+        );
     }
 
-
-    public function startConsultation(Appointment $appointment, User $actor): Appointment
-    {
+    public function startConsultation(
+        Appointment $appointment,
+        User $actor
+    ): Appointment {
         $this->ensureActorCan($appointment, $actor, ['doctor']);
-        $this->ensureTransition($appointment, AppointmentStatus::CheckedIn, AppointmentStatus::InProgress);
 
-        return $this->applyTransition($appointment, $actor, AppointmentStatus::InProgress, 'appointment_started');
+        $this->ensureTransition(
+            $appointment,
+            AppointmentStatus::CheckedIn,
+            AppointmentStatus::InProgress
+        );
+
+        return $this->applyTransition(
+            $appointment,
+            $actor,
+            AppointmentStatus::InProgress,
+            'appointment_started'
+        );
     }
 
-
-    public function complete(Appointment $appointment, User $actor): Appointment
-    {
+    public function complete(
+        Appointment $appointment,
+        User $actor
+    ): Appointment {
         $this->ensureActorCan($appointment, $actor, ['doctor']);
-        $this->ensureTransition($appointment, AppointmentStatus::InProgress, AppointmentStatus::Completed);
 
-        return $this->applyTransition($appointment, $actor, AppointmentStatus::Completed, 'appointment_completed');
+        $this->ensureTransition(
+            $appointment,
+            AppointmentStatus::InProgress,
+            AppointmentStatus::Completed
+        );
+
+        return $this->applyTransition(
+            $appointment,
+            $actor,
+            AppointmentStatus::Completed,
+            'appointment_completed'
+        );
     }
 
-
-    public function cancel(Appointment $appointment, User $actor, string $reason): Appointment
-    {
-        $actorKind = $this->ensureActorCan($appointment, $actor, ['patient', 'doctor', 'receptionist', 'admin']);
+    public function cancel(
+        Appointment $appointment,
+        User $actor,
+        string $reason
+    ): Appointment {
+        $this->ensureActorCan($appointment, $actor, [
+            'patient',
+            'doctor',
+            'receptionist',
+            'admin',
+        ]);
 
         if ($appointment->status->isTerminal()) {
-            throw new BusinessException('This appointment is already in a final state and cannot be cancelled.');
+            throw new BusinessException(
+                'This appointment is already in a final state and cannot be cancelled.'
+            );
         }
 
-        if ($actorKind === 'patient') {
-            $this->ensureCancellableByPatient($appointment);
-        }
+        $this->cancellationService->cancel(
+            $appointment,
+            $reason,
+            $actor
+        );
 
-        return $this->transaction(function () use ($appointment, $actor, $reason) {
+        return $appointment->fresh();
+    }
+
+    public function markNoShow(
+    Appointment $appointment,
+    User $actor
+): Appointment {
+    $this->ensureActorCan($appointment, $actor, [
+        'receptionist',
+        'doctor',
+    ]);
+
+    $this->ensureTransition(
+        $appointment,
+        AppointmentStatus::Scheduled,
+        AppointmentStatus::NoShow
+    );
+
+    return $this->transaction(
+        function () use ($appointment, $actor) {
+
             $appointment->update([
-                'status'               => AppointmentStatus::Cancelled->value,
-                'cancellation_reason' => $reason,
+                'status' => AppointmentStatus::NoShow->value,
             ]);
 
-            if ($appointment->slot_id) {
-                app(DoctorTimeSlotService::class)->release($appointment->slot_id);
+            $patient = $appointment->patient;
+
+            if ($patient) {
+                $patient->increment('no_show_count');
+
+                if ($patient->no_show_count >= 2) {
+                    $patient->update([
+                        'cash_payment_blocked' => true,
+                    ]);
+                }
             }
 
-            $this->log($appointment, $actor, 'appointment_cancelled', $reason);
-
-            return $appointment->fresh();
-        });
-    }
-
-
-    public function markNoShow(Appointment $appointment, User $actor): Appointment
-    {
-        $this->ensureActorCan($appointment, $actor, ['receptionist', 'doctor']);
-        $this->ensureTransition($appointment, AppointmentStatus::Scheduled, AppointmentStatus::NoShow);
-
-        return $this->transaction(function () use ($appointment, $actor) {
-            $appointment->update(['status' => AppointmentStatus::NoShow->value]);
-
             if ($appointment->slot_id) {
-                app(DoctorTimeSlotService::class)->release($appointment->slot_id);
+                app(DoctorTimeSlotService::class)
+                    ->release($appointment->slot_id);
             }
 
-            $this->log($appointment, $actor, 'appointment_no_show');
+            $this->log(
+                $appointment,
+                $actor,
+                'appointment_no_show'
+            );
 
             return $appointment->fresh();
-        });
-    }
+        }
+    );
+}
 
     // ─────────────────────────────────────────────────────────────
-    //  Private Helpers
+    // Private Helpers
     // ─────────────────────────────────────────────────────────────
+    private function applyTransition(
+        Appointment $appointment,
+        User $actor,
+        AppointmentStatus $newStatus,
+        string $logAction
+    ): Appointment {
+        return $this->transaction(
+            function () use (
+                $appointment,
+                $actor,
+                $newStatus,
+                $logAction
+            ) {
+                $appointment->update([
+                    'status' => $newStatus->value,
+                ]);
 
-    private function applyTransition(Appointment $appointment, User $actor, AppointmentStatus $newStatus, string $logAction): Appointment
-    {
-        return $this->transaction(function () use ($appointment, $actor, $newStatus, $logAction) {
-            $appointment->update(['status' => $newStatus->value]);
+                $this->log(
+                    $appointment,
+                    $actor,
+                    $logAction
+                );
 
-            $this->log($appointment, $actor, $logAction);
-
-            return $appointment->fresh();
-        });
+                return $appointment->fresh();
+            }
+        );
     }
 
-
-    private function ensureTransition(Appointment $appointment, AppointmentStatus $requiredCurrent, AppointmentStatus $target): void
-    {
+    private function ensureTransition(
+        Appointment $appointment,
+        AppointmentStatus $requiredCurrent,
+        AppointmentStatus $target
+    ): void {
         if ($appointment->status !== $requiredCurrent) {
             throw new BusinessException(
-                "Cannot move appointment from [{$appointment->status->value}] to [{$target->value}]. " .
-                "It must currently be [{$requiredCurrent->value}]."
+                "Cannot move appointment from [{$appointment->status->value}] "
+                . "to [{$target->value}]. "
+                . "It must currently be [{$requiredCurrent->value}]."
             );
         }
     }
 
-
-    private function ensureActorCan(Appointment $appointment, User $actor, array $allowedKinds): string
-    {
-        if (in_array('patient', $allowedKinds, true) && $actor->patient?->id === $appointment->patient_id) {
+    private function ensureActorCan(
+        Appointment $appointment,
+        User $actor,
+        array $allowedKinds
+    ): string {
+        if (
+            in_array('patient', $allowedKinds, true)
+            && $actor->patient?->id === $appointment->patient_id
+        ) {
             return 'patient';
         }
 
-        if (in_array('doctor', $allowedKinds, true) && $actor->doctor?->id === $appointment->doctor_id) {
+        if (
+            in_array('doctor', $allowedKinds, true)
+            && $actor->doctor?->id === $appointment->doctor_id
+        ) {
             return 'doctor';
         }
 
         if (in_array('receptionist', $allowedKinds, true)) {
             $clinicId = $actor->clinicUsers()->value('clinic_id');
-            if ($clinicId !== null && $clinicId === $appointment->clinic_id) {
+
+            if (
+                $clinicId !== null
+                && $clinicId === $appointment->clinic_id
+            ) {
                 return 'receptionist';
             }
         }
 
-        if (in_array('admin', $allowedKinds, true) && $actor->isSuperAdmin()) {
+        if (
+            in_array('admin', $allowedKinds, true)
+            && $actor->isSuperAdmin()
+        ) {
             return 'admin';
         }
 
-        throw new AuthorizationException('You are not authorized to perform this action on this appointment.');
+        throw new AuthorizationException(
+            'You are not authorized to perform this action on this appointment.'
+        );
     }
 
-
-    private function ensureCancellableByPatient(Appointment $appointment): void
-    {
-        $minHoursBeforeCancel = 2;
-
-        $startsAt = $appointment->slot?->starts_at;
-
-        if ($startsAt && now()->diffInHours($startsAt, false) < $minHoursBeforeCancel) {
-            throw new BusinessException(
-                "Appointments can only be cancelled at least {$minHoursBeforeCancel} hours in advance. " .
-                'Please contact the clinic directly for last-minute changes.'
-            );
-        }
-    }
-
-    private function log(Appointment $appointment, User $actor, string $action, ?string $description = null): void
-    {
+    private function log(
+        Appointment $appointment,
+        User $actor,
+        string $action,
+        ?string $description = null
+    ): void {
         ClinicLog::create([
-            'clinic_id'   => $appointment->clinic_id,
-            'user_id'     => $actor->id,
-            'action'      => $action,
-            'description' => $description ?? "Appointment #{$appointment->id} — {$action}",
+            'clinic_id' => $appointment->clinic_id,
+            'user_id' => $actor->id,
+            'action' => $action,
+            'description' => $description
+                ?? "Appointment #{$appointment->id} — {$action}",
             'entity_type' => Appointment::class,
-            'entity_id'   => $appointment->id,
+            'entity_id' => $appointment->id,
         ]);
     }
 }

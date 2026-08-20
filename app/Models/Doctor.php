@@ -7,6 +7,7 @@ use App\Core\Enums\DoctorVerificationStatus;
 use App\Models\Department;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -18,21 +19,28 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 
 class Doctor extends Model implements HasMedia
 {
-    use SoftDeletes , InteractsWithMedia;
+    use SoftDeletes , InteractsWithMedia,HasFactory;
 
     protected $guarded = [];
 
     protected function casts(): array
     {
-        return [
+        return [ 
             'verification_status' => DoctorVerificationStatus::class,
-            'practice_start_date'    => 'date'
-        ];
-    }
+            'practice_start_date' => 'date',
 
+            'stripe_active' => 'boolean',
+            'examination_fee' => 'decimal:2',
+            'commission_percentage' => 'decimal:2',
+        ]; 
+    }
     public function profile(): HasOne
     {
         return $this->hasOne(DoctorProfile::class);
+    }
+       public function settings(): HasOne
+    {
+        return $this->hasOne(DoctorSetting::class, 'doctor_id');
     }
 
     public function user(): BelongsTo
@@ -147,6 +155,11 @@ class Doctor extends Model implements HasMedia
     {
         return $this->verification_status === DoctorVerificationStatus::Suspended;
     }
+    public function canReceiveOnlinePayments(): bool
+    {
+        return $this->stripe_active && filled($this->stripe_connect_id); 
+    }
+
 
     // ─── Media Helpers ────────────────────────────────────────────
 

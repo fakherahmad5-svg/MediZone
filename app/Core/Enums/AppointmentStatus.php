@@ -4,18 +4,17 @@ namespace App\Core\Enums;
 
 use App\Core\Enums\Concerns\EnumValues;
 
-
 enum AppointmentStatus: string
 {
     use EnumValues;
 
+    case AwaitingPayment = 'awaiting_payment';
     case Scheduled  = 'scheduled';
     case CheckedIn  = 'checked_in';
     case InProgress = 'in_progress';
     case Completed  = 'completed';
     case Cancelled  = 'cancelled';
     case NoShow     = 'no_show';
-
 
     public function isTerminal(): bool
     {

@@ -3,6 +3,8 @@
 use App\Modules\Appointments\Controllers\DoctorAppointmentController;
 use App\Modules\Appointments\Controllers\PatientAppointmentController;
 use App\Modules\Appointments\Controllers\ReceptionistAppointmentController;
+use App\Modules\Doctors\Controllers\DoctorStripeOnboardingController;
+use App\Modules\Payments\Controllers\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -17,6 +19,7 @@ Route::middleware('role:patient')
         Route::get('/{id}', [PatientAppointmentController::class, 'show'])->name('show');
         Route::post('/{id}/cancel', [PatientAppointmentController::class, 'cancel'])->name('cancel');
         Route::post('/{id}/reschedule', [PatientAppointmentController::class, 'reschedule'])->name('reschedule');
+        Route::post('/{id}/checkout', [PatientAppointmentController::class, 'checkout'])->name('checkout');
     });
 
 // ── Doctor ────────────────────────────────

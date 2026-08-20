@@ -6,12 +6,28 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Patient extends Model
 {
-    use SoftDeletes;
+   use HasFactory, SoftDeletes;
 
-    protected $fillable = ['user_id', 'blood_type'];
+    protected $fillable = [
+        'user_id',
+        'blood_type',
+        
+        'no_show_count',
+        'cash_payment_blocked',
+        ];
+
+    protected function casts(): array 
+    {
+        return 
+        [
+        'no_show_count' => 'integer',
+        'cash_payment_blocked' => 'boolean',
+        ]; 
+    }
 
     public function user(): BelongsTo
     {
@@ -52,4 +68,14 @@ class Patient extends Model
     {
         return $this->hasMany(DoctorReport::class);
     }
-}
+    public function payments(): HasMany
+    {
+    return $this->hasMany(Payment::class); 
+    }
+    public function canBookCash(): bool
+    {
+        return ! $this->cash_payment_blocked; 
+    }
+        
+    
+    }

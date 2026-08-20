@@ -3,17 +3,21 @@
 namespace App\Models;
 
 use App\Core\Enums\AppointmentStatus;
+use App\Core\Enums\CashDepositType;
 use App\Core\Enums\ConsultationType;
+use App\Core\Enums\PaymentMethod;
 use App\Models\Clinic;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Appointment extends Model
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'clinic_id',
@@ -26,6 +30,17 @@ class Appointment extends Model
         'cancellation_reason',
         'created_by',
         'notes',
+        'payment_method',
+        'commission_amount',
+        'deposit_amount',
+        'remaining_cash_amount',
+        'cancelled_at',
+        'refund_amount',
+        'stripe_payment_intent_id',
+        // NEW — financial snapshot, written once at booking time.
+        'deposit_type',
+        'deposit_percentage',
+        'commission_percentage',
     ];
 
     protected function casts(): array
@@ -34,8 +49,21 @@ class Appointment extends Model
             'status'          => AppointmentStatus::class,
             'encounter_type'  => ConsultationType::class,
             'price'           => 'float',
+
+            'payment_method'          => PaymentMethod::class,
+            'commission_amount'       => 'decimal:2',
+            'deposit_amount'          => 'decimal:2',
+            'remaining_cash_amount'   => 'decimal:2',
+            'refund_amount'           => 'decimal:2',
+            'cancelled_at'            => 'datetime',
+
+            // NEW
+            'deposit_type'            => CashDepositType::class,
+            'deposit_percentage'      => 'decimal:2',
+            'commission_percentage'   => 'decimal:2',
         ];
     }
+
     public function clinic(): BelongsTo
     {
         return $this->belongsTo(Clinic::class);
@@ -76,7 +104,15 @@ class Appointment extends Model
         return $this->hasOne(Invoice::class);
     }
 
-    // ─── Status Helpers ───────────────────────────────────────────
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function latestPayment(): HasOne
+    {
+        return $this->hasOne(Payment::class)->latestOfMany();
+    }
 
     public function isScheduled(): bool
     {
@@ -106,5 +142,20 @@ class Appointment extends Model
     public function isActive(): bool
     {
         return ! $this->status->isTerminal();
+    }
+
+    public function isAwaitingPayment(): bool
+    {
+        return $this->status === AppointmentStatus::AwaitingPayment;
+    }
+
+    public function isCashBooking(): bool
+    {
+        return $this->payment_method === PaymentMethod::Cash;
+    }
+
+    public function isCardBooking(): bool
+    {
+        return $this->payment_method === PaymentMethod::Card;
     }
 }

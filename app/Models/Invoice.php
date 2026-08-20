@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Core\Enums\InvoiceStatus;
 use App\Models\Clinic;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -25,8 +26,10 @@ class Invoice extends Model
     protected function casts(): array
     {
         return [
-            'issued_at' => 'datetime',
-            'paid_at'   => 'datetime',
+            'total_amount' => 'decimal:2',
+            'status'       => InvoiceStatus::class, // ADDED — was missing, status was read as a raw string
+            'issued_at'    => 'datetime',
+            'paid_at'      => 'datetime',
         ];
     }
 
