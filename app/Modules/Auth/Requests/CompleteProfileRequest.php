@@ -17,7 +17,7 @@ class CompleteProfileRequest extends FormRequest
 
     public function rules(): array
     {
-       $role = UserRole::Doctor->value;
+        $role = $this->user()->clinicUsers()->with('role')->first()?->role?->name;
 
 
         return [
