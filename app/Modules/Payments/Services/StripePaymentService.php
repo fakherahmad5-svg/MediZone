@@ -14,6 +14,7 @@ use App\Core\Exceptions\StripeRefundFailedException;
 use App\Core\Exceptions\StripeWebhookVerificationException;
 use App\Core\Enums\StripeAccountType;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use App\Models\Appointment;
 use App\Models\Doctor;
@@ -34,8 +35,6 @@ use Stripe\Stripe;
 
 class StripePaymentService
 {
-    
-
     public function __construct(
         protected StripeClient $stripe
     ) {
@@ -54,7 +53,7 @@ class StripePaymentService
         }
 
         try {
-            $account = $this->stripe->accounts->create([
+            $account = $this->callStripe(fn () => $this->stripe->accounts->create([
                 'type' => 'express',
                 'country' => $country,
                 'email' => $doctor->user?->email,
@@ -62,7 +61,7 @@ class StripePaymentService
                     'card_payments' => ['requested' => true],
                     'transfers' => ['requested' => true],
                 ],
-            ]);
+            ]));
         } catch (ApiErrorException $e) {
             throw StripeConnectAccountException::fromStripeError(
                 $e->getMessage()
@@ -71,7 +70,7 @@ class StripePaymentService
 
         $doctor->update([
             'stripe_connect_id' => $account->id,
-             'stripe_account_type' => StripeAccountType::Express,
+            'stripe_account_type' => StripeAccountType::Express,
         ]);
 
         return $account;
@@ -89,12 +88,12 @@ class StripePaymentService
         }
 
         try {
-            return $this->stripe->accountLinks->create([
+            return $this->callStripe(fn () => $this->stripe->accountLinks->create([
                 'account' => $doctor->stripe_connect_id,
                 'refresh_url' => $refreshUrl,
                 'return_url' => $returnUrl,
                 'type' => 'account_onboarding',
-            ]);
+            ]));
         } catch (ApiErrorException $e) {
             throw StripeConnectAccountException::fromStripeError(
                 $e->getMessage()
@@ -122,130 +121,144 @@ class StripePaymentService
             'payouts_enabled' => $payoutsEnabled,
         ];
     }
-            // ─────────────────────────────────────────────────────────────
-// Stripe Connect — linking an existing account (OAuth / Standard)
 // ─────────────────────────────────────────────────────────────
+    // Stripe Connect — linking an existing account (OAuth / Standard)
+    // ─────────────────────────────────────────────────────────────
 
-private const OAUTH_STATE_CACHE_PREFIX = 'stripe_connect_oauth_state:';
-private const OAUTH_STATE_TTL_MINUTES = 15;
+    private const OAUTH_STATE_CACHE_PREFIX = 'stripe_connect_oauth_state:';
+    private const OAUTH_STATE_TTL_MINUTES = 15;
 
-/**
- * Builds the Stripe OAuth authorize URL for a doctor who already
- * owns a Stripe account and wants to connect it (instead of us
- * creating a new Express account for them).
- *
- * We never trust a doctor_id coming back on the callback request —
- * Stripe redirects the doctor's browser directly to our callback,
- * unauthenticated. Instead we bind a one-time state token to this
- * doctor now, and resolve it back on the callback.
- */
-public function buildOAuthAuthorizeUrl(Doctor $doctor, string $redirectUrl): string
-{
-    $clientId = config('services.stripe.connect_client_id');
-
-    if (! $clientId) {
-        throw StripeConnectAccountException::fromStripeError(
-            'Stripe Connect OAuth client_id is not configured.'
-        );
-    }
-
-    $state = Str::random(40);
-
-    Cache::put(
-        self::OAUTH_STATE_CACHE_PREFIX . $state,
-        $doctor->id,
-        now()->addMinutes(self::OAUTH_STATE_TTL_MINUTES)
-    );
-
-    $query = http_build_query([
-        'response_type' => 'code',
-        'scope' => 'read_write',
-        'client_id' => $clientId,
-        'state' => $state,
-        'redirect_uri' => $redirectUrl,
-    ]);
-
-    return "https://connect.stripe.com/oauth/authorize?{$query}";
-}
-
-/**
- * Exchanges the OAuth authorization code Stripe sent back for the
- * connected account's id (acct_...), and links it to the doctor who
- * initiated the flow — resolved from the one-time state value.
- *
- * This never creates a new Stripe account: it attaches the doctor's
- * own existing account (type = standard) to our platform.
- */
-public function linkExistingAccountViaOAuth(string $code, string $state): Doctor
-{
-    $cacheKey = self::OAUTH_STATE_CACHE_PREFIX . $state;
-    $doctorId = Cache::get($cacheKey);
-
-    if (! $doctorId) {
-        throw StripeConnectAccountException::fromStripeError(
-            'This Stripe connection link is invalid or has expired.'
-        );
-    }
-
-    // One-time use — prevents replay of the same state value.
-    Cache::forget($cacheKey);
-
-    $doctor = Doctor::query()->find($doctorId);
-
-    if (! $doctor) {
-        throw StripeConnectAccountException::fromStripeError(
-            'The doctor associated with this Stripe connection could not be found.'
-        );
-    }
-
-    $response = $this->exchangeOAuthCode($code);
-
-    $connectedAccountId = $response->stripe_user_id;
-
-    $account = $this->retrieveAccount($connectedAccountId);
-
-    $doctor->update([
-        'stripe_connect_id' => $connectedAccountId,
-        'stripe_account_type' => StripeAccountType::Standard,
-        'stripe_active' => (bool) $account->charges_enabled
-            && (bool) $account->payouts_enabled,
-    ]);
-
-    return $doctor->refresh();
-}
-
-/**
- * Isolated in its own protected method (rather than inlined) so
- * tests can mock the actual Stripe OAuth call without hitting the
- * real API.
- */
-protected function exchangeOAuthCode(string $code): \Stripe\StripeObject
-{
-    Stripe::setApiKey(config('services.stripe.secret'));
-
-    try {
-        return OAuth::token([
-            'grant_type' => 'authorization_code',
-            'code' => $code,
-        ]);
-    } catch (ApiErrorException $e) {
-        throw StripeConnectAccountException::fromStripeError(
-            $e->getMessage()
-        );
-    }
-}
-    protected function retrieveAccount(string $accountId): StripeAccount
+    public function buildOAuthAuthorizeUrl(Doctor $doctor, string $redirectUrl): string
     {
+        $clientId = config('services.stripe.connect_client_id');
+
+        if (! $clientId) {
+            throw StripeConnectAccountException::fromStripeError(
+                'Stripe Connect OAuth client_id is not configured.'
+            );
+        }
+
+        $state = Str::random(40);
+
+        Cache::put(
+            self::OAUTH_STATE_CACHE_PREFIX . $state,
+            $doctor->id,
+            now()->addMinutes(self::OAUTH_STATE_TTL_MINUTES)
+        );
+
+        $query = http_build_query([
+            'response_type' => 'code',
+            'scope' => 'read_write',
+            'client_id' => $clientId,
+            'state' => $state,
+            'redirect_uri' => $redirectUrl,
+        ]);
+
+        return "https://connect.stripe.com/oauth/authorize?{$query}";
+    }
+
+    public function linkExistingAccountViaOAuth(string $code, string $state): Doctor
+    {
+        $cacheKey = self::OAUTH_STATE_CACHE_PREFIX . $state;
+        $doctorId = Cache::get($cacheKey);
+
+        if (! $doctorId) {
+            throw StripeConnectAccountException::fromStripeError(
+                'This Stripe connection link is invalid or has expired.'
+            );
+        }
+
+        Cache::forget($cacheKey);
+
+        $doctor = Doctor::query()->find($doctorId);
+
+        if (! $doctor) {
+            throw StripeConnectAccountException::fromStripeError(
+                'The doctor associated with this Stripe connection could not be found.'
+            );
+        }
+
+        $response = $this->exchangeOAuthCode($code);
+
+        $connectedAccountId = $response->stripe_user_id;
+
+        $account = $this->retrieveAccount($connectedAccountId);
+
+        $doctor->update([
+            'stripe_connect_id' => $connectedAccountId,
+            'stripe_account_type' => StripeAccountType::Standard,
+            'stripe_active' => (bool) $account->charges_enabled
+                && (bool) $account->payouts_enabled,
+        ]);
+
+        return $doctor->refresh();
+    }
+
+    protected function exchangeOAuthCode(string $code): \Stripe\StripeObject
+    {
+        Stripe::setApiKey(config('services.stripe.secret'));
+
         try {
-            return $this->stripe->accounts->retrieve($accountId);
+            return $this->callStripe(fn () => OAuth::token([
+                'grant_type' => 'authorization_code',
+                'code' => $code,
+            ]));
         } catch (ApiErrorException $e) {
             throw StripeConnectAccountException::fromStripeError(
                 $e->getMessage()
             );
         }
     }
- // ─────────────────────────────────────────────────────────────
-    // Checkout — snapshot-driven
+
+    protected function retrieveAccount(string $accountId): StripeAccount
+    {
+        try {
+            return $this->callStripe(fn () => $this->stripe->accounts->retrieve($accountId));
+        } catch (ApiErrorException $e) {
+            throw StripeConnectAccountException::fromStripeError(
+                $e->getMessage()
+            );
+        }
+    }
+
+    /**
+     * Stripe sometimes attaches a "stripe-notice" response header —
+     * e.g. the Accounts v2 migration nudge for newly created
+     * platforms — which stripe-php surfaces via
+     * trigger_error(E_USER_WARNING). It is purely informational: the
+     * underlying API call has already succeeded or failed on its own
+     * terms by this point, via the normal Stripe\Exception\ApiErrorException
+     * path (handleErrorResponse()), which is completely untouched by
+     * this method and still bubbles up normally to every catch block
+     * below.
+     *
+ * Laravel's default error handler escalates ANY PHP warning into
+     * a fatal ErrorException, which would incorrectly abort an
+     * otherwise-successful Stripe call just because of this advisory
+     * notice. We log the notice instead of letting it propagate, and
+     * always restore the previous handler immediately after.
+     */
+    private function callStripe(callable $call)
+    {
+        set_error_handler(function (int $errno, string $errstr): bool {
+            if ($errno === E_USER_WARNING) {
+                Log::info('Stripe SDK notice (non-fatal): ' . $errstr);
+
+                return true;
+            }
+
+            return false;
+        });
+
+        try {
+            return $call();
+        } finally {
+            restore_error_handler();
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Checkout — snapshot-driven (UNCHANGED)
     // ─────────────────────────────────────────────────────────────
 
     /**
@@ -261,29 +274,17 @@ protected function exchangeOAuthCode(string $code): \Stripe\StripeObject
             $successUrl,
             $cancelUrl
         ): array {
-            /*
-             * Lock the appointment row first.
-             *
-             * This prevents two concurrent checkout requests
-             * from both passing the status/payment checks.
-             */
             $appointment = Appointment::query()
                 ->whereKey($appointment->id)
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            /*
-             * Re-check status AFTER acquiring the lock.
-             */
             if ($appointment->status !== AppointmentStatus::AwaitingPayment) {
                 throw AppointmentNotAwaitingPaymentException::forAppointment(
                     $appointment->id
                 );
             }
 
-            /*
-             * Re-check duplicate checkout AFTER acquiring the lock.
-             */
             $this->assertNoDuplicateCheckout($appointment);
 
             $doctor = $appointment->doctor;
@@ -310,7 +311,6 @@ protected function exchangeOAuthCode(string $code): \Stripe\StripeObject
                         'mode' => 'payment',
                         'success_url' => $successUrl,
                         'cancel_url' => $cancelUrl,
-
 
                         'line_items' => [[
                             'quantity' => 1,
@@ -343,10 +343,9 @@ protected function exchangeOAuthCode(string $code): \Stripe\StripeObject
                     $e->getMessage()
                 );
             }
-
-            $payment = Payment::create([
+$payment = Payment::create([
                 'appointment_id' => $appointment->id,
- 'patient_id' => $appointment->patient_id,
+                'patient_id' => $appointment->patient_id,
                 'doctor_id' => $appointment->doctor_id,
                 'clinic_id' => $appointment->clinic_id,
                 'amount' => $checkoutAmount,
@@ -381,10 +380,6 @@ protected function exchangeOAuthCode(string $code): \Stripe\StripeObject
         }
     }
 
-    /**
-     * Reads the amount actually charged through Stripe from the
-     * appointment's booking-time snapshot.
-     */
     protected function resolveCheckoutAmount(
         Appointment $appointment
     ): string {
@@ -397,10 +392,6 @@ protected function exchangeOAuthCode(string $code): \Stripe\StripeObject
         return (string) $appointment->deposit_amount;
     }
 
-    /**
-     * The platform commission is snapshotted at booking time
-     * against the FULL appointment price.
-     */
     protected function resolveApplicationFee(
         Appointment $appointment,
         string $checkoutAmount
@@ -415,7 +406,7 @@ protected function exchangeOAuthCode(string $code): \Stripe\StripeObject
     }
 
     // ─────────────────────────────────────────────────────────────
-    // Refunds
+    // Refunds (UNCHANGED)
     // ─────────────────────────────────────────────────────────────
 
     public function refundDestinationCharge(
@@ -456,7 +447,7 @@ protected function exchangeOAuthCode(string $code): \Stripe\StripeObject
     }
 
     // ─────────────────────────────────────────────────────────────
-    // Webhook idempotency
+    // Webhook idempotency (UNCHANGED)
     // ─────────────────────────────────────────────────────────────
 
     public function hasProcessedEvent(
@@ -480,9 +471,8 @@ protected function exchangeOAuthCode(string $code): \Stripe\StripeObject
                 'processed_at' => now(),
             ]
         );
-    }
-  // ─────────────────────────────────────────────────────────────
-    // Webhook signature verification
+    }// ─────────────────────────────────────────────────────────────
+    // Webhook signature verification (UNCHANGED)
     // ─────────────────────────────────────────────────────────────
 
     public function verifyWebhookSignature(

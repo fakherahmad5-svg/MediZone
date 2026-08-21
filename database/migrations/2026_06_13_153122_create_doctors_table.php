@@ -13,7 +13,6 @@ return new class extends Migration
         Schema::create('doctors', function (Blueprint $table) {
             $table->id();
             
-        
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->date('practice_start_date')->nullable();
             $table->enum('verification_status', DoctorVerificationStatus::values())->default(DoctorVerificationStatus::Pending->value);
