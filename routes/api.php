@@ -34,6 +34,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         require base_path('app/Modules/Appointments/routes.php');
         require base_path('app/Modules/Access/routes.php');
         require base_path('app/Modules/Encounters/routes.php');
+        require base_path('app/Modules/Consultations/routes.php');
         // ── Users & Profiles ─────────────────────────────────────────
         // require base_path('app/Modules/Users/routes.php');
 
@@ -54,9 +55,6 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
         // ── Encounters ───────────────────────────────────────────────
         // require base_path('app/Modules/Encounters/routes.php');
-
-        // ── Consultations ────────────────────────────────────────────
-        // require base_path('app/Modules/Consultations/routes.php');
 
         // ── Payments ─────────────────────────────────────────────────
         // require base_path('app/Modules/Payments/routes.php');
