@@ -13,6 +13,7 @@ class ClinicAdminResource extends BaseResource
         return [
             'id'            => $this->id,
             'name'          => $this->name,
+            'code'          => $this->code,
             'phone'         => $this->phone,
             'email'         => $this->email,
             'address'       => $this->address,

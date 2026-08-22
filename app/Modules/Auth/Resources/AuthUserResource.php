@@ -69,6 +69,7 @@ class AuthUserResource extends BaseResource
             $list[] = [
                 'clinic_id' => $clinic->id,
                 'clinic_name' => $clinic->name,
+                'clinic_code' => $clinic->code,
                 'consultation_fee' => $clinic->pivot->consultation_fee,
             ];
         }
