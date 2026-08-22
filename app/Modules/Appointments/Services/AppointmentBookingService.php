@@ -5,7 +5,9 @@ namespace App\Modules\Appointments\Services;
 use App\Core\Enums\AccessStatus;
 use App\Core\Enums\AccessType;
 use App\Core\Enums\AppointmentStatus;
+use App\Core\Enums\AppointmentPaymentMethod;
 use App\Core\Enums\ConsultationType;
+use App\Core\Enums\NotificationType;
 use App\Core\Exceptions\AuthorizationException;
 use App\Core\Exceptions\BusinessException;
 use App\Core\Exceptions\NotFoundException;
@@ -18,16 +20,30 @@ use App\Models\DoctorClinic;
 use App\Models\Patient;
 use App\Models\PatientDoctorAccess;
 use App\Models\User;
+use App\Modules\Payments\Services\PaymentService;
 use App\Modules\Scheduling\Services\DoctorTimeSlotService;
 
 class AppointmentBookingService extends BaseService
 {
+    public function __construct(private readonly PaymentService $payments) {}
 
-    public function book(User $patientUser, int $slotId, ConsultationType $type, ?string $notes = null): Appointment
-    {
+    /**
+     * ⚠️ الحجز والدفع صاروا عملية واحدة ذرية (atomic): الموعد ما بينخلق
+     * كـ Scheduled "مؤكّد" إلا لو الدفع نجح فعلياً بنفس الـtransaction -
+     * لو الدفع فشل (رصيد غير كافي، طريقة دفع غير متاحة...) كل شي
+     * بينرجع (rollback): الموعد ما بينتسجل والـslot بيرجع متاح. هيك
+     * ما في إمكانية إنه يصير عنا موعد "مجدول" بدون دفع فعلي وراه.
+     */
+    public function book(
+        User $patientUser,
+        int $slotId,
+        ConsultationType $type,
+        AppointmentPaymentMethod $paymentMethod,
+        ?string $notes = null
+    ): Appointment {
         $patient = $this->patientFor($patientUser);
 
-        return $this->transaction(function () use ($patient, $patientUser, $slotId, $type, $notes) {
+        return $this->transaction(function () use ($patient, $patientUser, $slotId, $type, $paymentMethod, $notes) {
             $slot = app(DoctorTimeSlotService::class)->lockForBooking($slotId);
 
             $appointment = Appointment::create([
@@ -42,10 +58,15 @@ class AppointmentBookingService extends BaseService
                 'notes'          => $notes,
             ]);
 
+            // الدفع أولاً - أي استثناء هون (BusinessException لرصيد غير
+            // كافي أو طريقة دفع غير متاحة) بيلغي الحجز كامل تلقائياً
+            // (rollback بسبب الاستثناء يلي ما انلقط هون).
+            $this->payments->pay($appointment, $patientUser, $paymentMethod);
+
             $this->log($appointment, $patientUser, 'appointment_booked');
             $this->grantInitialAccess($appointment);
             $this->notifyBooked($appointment);
-            return $appointment->fresh(['clinic', 'doctor.user', 'slot']);
+            return $appointment->fresh(['clinic', 'doctor.user', 'slot', 'payment']);
         });
     }
 
@@ -158,6 +179,7 @@ class AppointmentBookingService extends BaseService
             app(NotificationService::class)->notify($fresh->patient->user, NotificationType::AppointmentRescheduled, [
                 'doctor_name' => $this->doctorName($fresh),
                 'new_date'    => $fresh->slot?->starts_at?->format('Y-m-d H:i'),
+                'appointment_id' => $fresh->id,
             ]);
 
             return $fresh;
@@ -188,6 +210,7 @@ class AppointmentBookingService extends BaseService
             'doctor_name'      => $this->doctorName($appointment),
             'appointment_date' => $appointment->slot?->starts_at?->format('Y-m-d H:i')
                 ?? now()->format('Y-m-d H:i'), // Walk-in: بلا slot، الآن هو موعد الزيارة فعلياً.
+            'appointment_id'   => $appointment->id,
         ]);
     }
 

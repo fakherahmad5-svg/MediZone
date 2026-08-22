@@ -76,6 +76,11 @@ class Appointment extends Model
         return $this->hasOne(Invoice::class);
     }
 
+    public function payment(): HasOne
+    {
+        return $this->hasOne(AppointmentPayment::class);
+    }
+
     // ─── Status Helpers ───────────────────────────────────────────
 
     public function isScheduled(): bool

@@ -2,6 +2,7 @@
 
 namespace App\Modules\Appointments\Requests;
 
+use App\Core\Enums\AppointmentPaymentMethod;
 use App\Core\Enums\ConsultationType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -20,6 +21,9 @@ class BookAppointmentRequest extends FormRequest
             'slot_id'        => ['required', 'integer', 'exists:doctor_time_slots,id'],
             'encounter_type' => ['required', 'string', Rule::in(ConsultationType::values())],
             'notes'          => ['nullable', 'string', 'max:1000'],
+            // ⚠️ إلزامي هلق: الحجز ما بينكّد (Scheduled) إلا لو الدفع نجح -
+            // راجع AppointmentBookingService::book().
+            'payment_method' => ['required', 'string', Rule::in(AppointmentPaymentMethod::values())],
         ];
     }
 }

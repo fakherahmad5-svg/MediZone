@@ -3,6 +3,7 @@
 namespace App\Modules\Appointments\Resources;
 
 use App\Core\Http\Resources\BaseResource;
+use App\Modules\Payments\Resources\AppointmentPaymentResource;
 
 class AppointmentResource extends BaseResource
 {
@@ -35,6 +36,10 @@ class AppointmentResource extends BaseResource
                 'starts_at' => $this->formatDate($this->slot->starts_at),
                 'ends_at'   => $this->formatDate($this->slot->ends_at),
             ] : null),
+
+            'payment' => $this->whenLoaded('payment', fn () => $this->payment
+                ? new AppointmentPaymentResource($this->payment)
+                : null),
 
             'created_at' => $this->formatDate($this->created_at),
         ];

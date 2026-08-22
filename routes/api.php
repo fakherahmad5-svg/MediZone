@@ -56,8 +56,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         // ── Encounters ───────────────────────────────────────────────
         // require base_path('app/Modules/Encounters/routes.php');
 
-        // ── Payments ─────────────────────────────────────────────────
-        // require base_path('app/Modules/Payments/routes.php');
+        // ── Payments (Wallet) ────────────────────────────────────────
+        require base_path('app/Modules/Payments/routes.php');
 
         // ── Notifications ────────────────────────────────────────────
         // require base_path('app/Modules/Notifications/routes.php');

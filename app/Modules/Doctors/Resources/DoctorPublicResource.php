@@ -14,7 +14,9 @@ class DoctorPublicResource extends BaseResource
         return [
             'id'               => $this->id,
             'name'             => trim("{$this->user?->first_name} {$this->user?->last_name}"),
+            'gender'           => $this->user?->gender?->value,
             'photo_url'        => $this->photoUrl(),
+            'experience_years' => $this->experience_years,
 
             'biography'        => $this->whenLoaded('profile', $this->profile?->biography),
             'qualifications'   => $this->whenLoaded('profile', $this->profile?->qualifications),

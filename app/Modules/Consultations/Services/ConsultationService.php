@@ -94,7 +94,7 @@ class ConsultationService extends BaseService
             return $message;
         });
 
-        $this->notifyOtherParticipant($appointment, $sender, $senderRole);
+        $this->notifyOtherParticipant($appointment, $consultation, $sender, $senderRole);
 
         return $message;
     }
@@ -132,7 +132,7 @@ class ConsultationService extends BaseService
     // conversation didn't just send this message. Silently no-ops if that
     // side has no linked user (shouldn't happen) or no registered device —
     // NotificationService already degrades to an in-app-only record then.
-    private function notifyOtherParticipant(Appointment $appointment, User $sender, MessageSenderRole $senderRole): void
+    private function notifyOtherParticipant(Appointment $appointment, Consultation $consultation, User $sender, MessageSenderRole $senderRole): void
     {
         $appointment->loadMissing(['doctor.user', 'patient.user']);
 
@@ -145,7 +145,12 @@ class ConsultationService extends BaseService
         }
 
         $this->notifications->notify($recipient, NotificationType::ConsultationMessageReceived, [
-            'sender_name' => $sender->full_name,
+            'sender_name'     => $sender->full_name,
+            // appointment_id لازم يكون هون - بدونها الموبايل ما بيقدر يعرف
+            // أي محادثة يفتح لما المستخدم يضغط عالإشعار (الشات مربوط
+            // بموعد، مو بمستخدم مباشرة - راجع ConsultationController).
+            'appointment_id'  => $appointment->id,
+            'consultation_id' => $consultation->id,
         ]);
     }
 }

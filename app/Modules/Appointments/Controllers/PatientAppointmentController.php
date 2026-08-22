@@ -2,6 +2,7 @@
 
 namespace App\Modules\Appointments\Controllers;
 
+use App\Core\Enums\AppointmentPaymentMethod;
 use App\Core\Enums\ConsultationType;
 use App\Core\Http\Controllers\BaseController;
 use App\Modules\Appointments\Requests\BookAppointmentRequest;
@@ -52,6 +53,7 @@ class PatientAppointmentController extends BaseController
             $request->user(),
             $data['slot_id'],
             ConsultationType::from($data['encounter_type']),
+            AppointmentPaymentMethod::from($data['payment_method']),
             $data['notes'] ?? null
         );
 

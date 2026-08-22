@@ -19,13 +19,15 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        $mainClinic = Clinic::query()->where('email', 'riyadh@vmc.sa')->firstOrFail();
+        // NOTE: clinics have no 'email' column and departments have no
+        // 'clinic_id' column in the current schema (departments are
+        // global, linked to clinics only via the clinic_departments
+        // pivot) - looked up by name instead.
+        $mainClinic = Clinic::query()->where('name', 'Virtual Medical Complex - Main Branch')->firstOrFail();
         $cardiology = Department::query()
-
             ->where('name', 'Cardiology')
             ->firstOrFail();
         $pediatrics = Department::query()
-            ->where('clinic_id', $mainClinic->id)
             ->where('name', 'Pediatrics')
             ->firstOrFail();
 

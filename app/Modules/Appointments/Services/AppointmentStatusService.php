@@ -4,6 +4,7 @@ namespace App\Modules\Appointments\Services;
 
 use App\Core\Enums\AccessStatus;
 use App\Core\Enums\AppointmentStatus;
+use App\Core\Enums\NotificationType;
 use App\Core\Exceptions\AuthorizationException;
 use App\Core\Exceptions\BusinessException;
 use App\Core\Services\BaseService;
@@ -12,11 +13,13 @@ use App\Models\Appointment;
 use App\Models\ClinicLog;
 use App\Models\PatientDoctorAccess;
 use App\Models\User;
+use App\Modules\Payments\Services\PaymentService;
 use App\Modules\Scheduling\Services\DoctorTimeSlotService;
 
 
 class AppointmentStatusService extends BaseService
 {
+    public function __construct(private readonly PaymentService $payments) {}
 
     public function checkIn(Appointment $appointment, User $actor): Appointment
     {
@@ -43,9 +46,12 @@ class AppointmentStatusService extends BaseService
 
         $result = $this->applyTransition($appointment, $actor, AppointmentStatus::Completed, 'appointment_completed');
 
+        $this->payments->settleOnCompletion($result);
+
         $result->loadMissing(['doctor.user', 'patient.user']);
         app(NotificationService::class)->notify($result->patient->user, NotificationType::AppointmentCompleted, [
             'doctor_name' => $this->doctorName($result),
+            'appointment_id' => $result->id,
         ]);
 
         return $result; }
@@ -75,11 +81,14 @@ class AppointmentStatusService extends BaseService
             $this->closeAccess($appointment, AccessStatus::Revoked, $actor);
             $this->log($appointment, $actor, 'appointment_cancelled', $reason);
 
+            $this->payments->settleOnCancellation($appointment, $actorKind);
+
             $fresh = $appointment->fresh();
             $fresh->loadMissing(['doctor.user', 'patient.user', 'slot']);
             app(NotificationService::class)->notify($fresh->patient->user, NotificationType::AppointmentCancelled, [
                 'doctor_name'      => $this->doctorName($fresh),
                 'appointment_date' => $fresh->slot?->starts_at?->format('Y-m-d H:i'),
+                'appointment_id'   => $fresh->id,
             ]);
 
             return $fresh;
@@ -100,6 +109,8 @@ class AppointmentStatusService extends BaseService
             }
             $this->closeAccess($appointment, AccessStatus::Revoked, $actor);
             $this->log($appointment, $actor, 'appointment_no_show');
+
+            $this->payments->settleOnNoShow($appointment);
 
             return $appointment->fresh();
         });

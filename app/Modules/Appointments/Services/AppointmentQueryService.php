@@ -19,7 +19,7 @@ class AppointmentQueryService
         $patient = $this->patientFor($patientUser);
 
         return Appointment::where('patient_id', $patient->id)
-            ->with(['clinic:id,name', 'doctor.user:id,first_name,last_name', 'slot'])
+            ->with(['clinic:id,name', 'doctor.user:id,first_name,last_name', 'slot', 'payment'])
             ->when(! empty($filters['status']), fn ($q) => $q->where('status', $filters['status']))
             ->latest('id')
             ->paginate($perPage);
@@ -31,7 +31,7 @@ class AppointmentQueryService
 
         $appointment = Appointment::where('id', $appointmentId)
             ->where('patient_id', $patient->id)
-            ->with(['clinic:id,name', 'doctor.user:id,first_name,last_name', 'slot'])
+            ->with(['clinic:id,name', 'doctor.user:id,first_name,last_name', 'slot', 'payment'])
             ->first();
 
         if (! $appointment) {
@@ -47,7 +47,7 @@ class AppointmentQueryService
         $doctor = $this->doctorFor($doctorUser);
 
         return Appointment::where('doctor_id', $doctor->id)
-            ->with(['clinic:id,name', 'patient.user:id,first_name,last_name', 'slot'])
+            ->with(['clinic:id,name', 'patient.user:id,first_name,last_name', 'slot', 'payment'])
             ->when(! empty($filters['status']), fn ($q) => $q->where('status', $filters['status']))
             ->when(
                 ! empty($filters['date']),
@@ -63,7 +63,7 @@ class AppointmentQueryService
 
         $appointment = Appointment::where('id', $appointmentId)
             ->where('doctor_id', $doctor->id)
-            ->with(['clinic:id,name', 'patient.user:id,first_name,last_name', 'slot'])
+            ->with(['clinic:id,name', 'patient.user:id,first_name,last_name', 'slot', 'payment'])
             ->first();
 
         if (! $appointment) {
