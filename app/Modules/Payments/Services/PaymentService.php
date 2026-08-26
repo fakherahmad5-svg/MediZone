@@ -211,18 +211,28 @@ class PaymentService extends BaseService
 
     public function settleOnCancellation(Appointment $appointment, string $cancelledByKind): void
     {
-        $payment = AppointmentPayment::where('appointment_id', $appointment->id)->first();
-
-        if (! $payment || ! in_array($payment->status, [
-            AppointmentPaymentStatus::FullyPaid,
-            AppointmentPaymentStatus::DepositPaid,
-        ], true)) {
-            return;
-        }
-
         $appointment->loadMissing('patient.user');
 
-        $this->transaction(function () use ($appointment, $payment, $cancelledByKind) {
+        $this->transaction(function () use ($appointment, $cancelledByKind) {
+            // Lock the payment row and re-check its status inside the
+            // transaction (not before it) - a plain unlocked read here let
+            // two concurrent cancel requests for the same appointment both
+            // see FullyPaid/DepositPaid and both run the refund below,
+            // double-crediting the patient and double-debiting the
+            // platform wallet. Locking makes the second request wait for
+            // the first to commit its "Refunded" update, so its own status
+            // check then correctly finds nothing left to refund.
+            $payment = AppointmentPayment::where('appointment_id', $appointment->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $payment || ! in_array($payment->status, [
+                AppointmentPaymentStatus::FullyPaid,
+                AppointmentPaymentStatus::DepositPaid,
+            ], true)) {
+                return;
+            }
+
             $platformWallet = $this->wallets->platformWallet();
             $patientWallet = $this->wallets->walletFor($appointment->patient->user);
 

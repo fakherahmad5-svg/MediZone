@@ -69,21 +69,35 @@ class AppointmentStatusService extends BaseService
             $this->ensureCancellableByPatient($appointment);
         }
 
-        return $this->transaction(function () use ($appointment, $actor, $reason) {
-            $appointment->update([
+        return $this->transaction(function () use ($appointment, $actor, $actorKind, $reason) {
+            // Re-fetch and lock the row inside the transaction. The
+            // isTerminal() check above reads an unlocked row, so two
+            // concurrent cancel requests for the same appointment (double
+            // tap, retry after a slow response, two devices) could both
+            // pass it before either commits. Locking here makes the second
+            // request wait for the first to commit, then re-checking
+            // isTerminal() on the fresh locked row rejects it instead of
+            // running the release/refund logic twice.
+            $locked = Appointment::query()->lockForUpdate()->findOrFail($appointment->id);
+
+            if ($locked->status->isTerminal()) {
+                throw new BusinessException('This appointment is already in a final state and cannot be cancelled.');
+            }
+
+            $locked->update([
                 'status'               => AppointmentStatus::Cancelled->value,
                 'cancellation_reason' => $reason,
             ]);
 
-            if ($appointment->slot_id) {
-                app(DoctorTimeSlotService::class)->release($appointment->slot_id);
+            if ($locked->slot_id) {
+                app(DoctorTimeSlotService::class)->release($locked->slot_id);
             }
-            $this->closeAccess($appointment, AccessStatus::Revoked, $actor);
-            $this->log($appointment, $actor, 'appointment_cancelled', $reason);
+            $this->closeAccess($locked, AccessStatus::Revoked, $actor);
+            $this->log($locked, $actor, 'appointment_cancelled', $reason);
 
-            $this->payments->settleOnCancellation($appointment, $actorKind);
+            $this->payments->settleOnCancellation($locked, $actorKind);
 
-            $fresh = $appointment->fresh();
+            $fresh = $locked->fresh();
             $fresh->loadMissing(['doctor.user', 'patient.user', 'slot']);
             app(NotificationService::class)->notify($fresh->patient->user, NotificationType::AppointmentCancelled, [
                 'doctor_name'      => $this->doctorName($fresh),

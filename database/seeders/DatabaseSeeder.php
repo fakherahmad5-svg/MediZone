@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
             DrugSeeder::class,
             //UserSeeder::class,
             AdminUserSeeder::class,
-            WalletSeeder::class,
+           // WalletSeeder::class,
         ]);
     }
 }

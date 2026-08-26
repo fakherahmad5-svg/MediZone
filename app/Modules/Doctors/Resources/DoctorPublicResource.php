@@ -18,10 +18,10 @@ class DoctorPublicResource extends BaseResource
             'photo_url'        => $this->photoUrl(),
             'experience_years' => $this->experience_years,
 
-            'biography'        => $this->whenLoaded('profile', $this->profile?->biography),
-            'qualifications'   => $this->whenLoaded('profile', $this->profile?->qualifications),
-            'online_consultation_fee' => $this->whenLoaded('profile', $this->profile?->online_consultation_fee),
-            'languages'        => $this->whenLoaded('profile', $this->profile?->languages),
+            'biography'        => $this->whenLoaded('profile', fn () => $this->profile?->biography),
+            'qualifications'   => $this->whenLoaded('profile', fn () => $this->profile?->qualifications),
+            'online_consultation_fee' => $this->whenLoaded('profile', fn () => $this->profile?->online_consultation_fee),
+            'languages'        => $this->whenLoaded('profile', fn () => $this->profile?->languages),
 
             'departments' => DepartmentResource::collection($this->whenLoaded('departments')),
             'clinics'     => $this->whenLoaded('clinics', fn () => $this->clinics->map(fn ($clinic) => [
